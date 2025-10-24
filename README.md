@@ -53,9 +53,6 @@ A classic word-guessing game implemented in Python using Tkinter for the graphic
 - Use the hint to help identify the word.
 - Win by guessing all letters correctly before running out of attempts.
 
-## License
-
-This project is open-source and available under the MIT License. Feel free to modify and distribute as needed.
 
 ## Contributing
 
