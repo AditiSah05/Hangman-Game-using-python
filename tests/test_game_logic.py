@@ -112,6 +112,31 @@ class HangmanStateTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             state.set_difficulty("expert")
 
+    def test_theme_filters_word_pool(self):
+        state = HangmanState(chooser=lambda items: items[0], theme="food")
+
+        state.reset()
+
+        self.assertIn(state.word, {"PIZZA", "SANDWICH", "CHOCOLATE", "STRAWBERRY", "PINEAPPLE", "WATERMELON"})
+
+    def test_theme_and_difficulty_can_filter_together(self):
+        words = [
+            ("CAT", "short animal"),
+            ("ELEPHANT", "long animal"),
+            ("PIZZA", "food"),
+        ]
+        state = HangmanState(word_list=words, chooser=lambda items: items[0], theme="animals", difficulty="hard")
+
+        state.reset()
+
+        self.assertEqual(state.word, "ELEPHANT")
+
+    def test_invalid_theme_raises(self):
+        state = self._state()
+
+        with self.assertRaises(ValueError):
+            state.set_theme("sports")
+
 
 if __name__ == "__main__":
     unittest.main()

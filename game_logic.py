@@ -7,75 +7,135 @@ DIFFICULTY_RULES = {
     "hard": (10, 99),
 }
 
-DEFAULT_WORD_LIST = [
-    ("RAINBOW", "Colorful light display in sky during rain"),
-    ("PYTHON", "A popular programming language"),
-    ("COMPUTER", "Electronic device for processing data"),
-    ("KEYBOARD", "Input device with keys"),
-    ("ELEPHANT", "Largest land animal with trunk"),
-    ("MOUNTAIN", "Large natural elevation of earth"),
-    ("OCEAN", "Vast body of salt water"),
-    ("BUTTERFLY", "Insect with colorful wings"),
-    ("GUITAR", "String musical instrument"),
-    ("CAMERA", "Device for taking photographs"),
-    ("LIBRARY", "Place with many books"),
-    ("PIZZA", "Italian dish with cheese and toppings"),
-    ("CASTLE", "Large fortified building"),
-    ("ROCKET", "Vehicle for space travel"),
-    ("DIAMOND", "Precious gemstone"),
-    ("SANDWICH", "Food made between two slices of bread"),
-    ("TELEPHONE", "Device used for voice communication"),
-    ("BICYCLE", "Two-wheeled vehicle powered by pedaling"),
-    ("CHOCOLATE", "Sweet treat made from cocoa beans"),
-    ("UMBRELLA", "Portable shelter from rain or sun"),
-    ("AIRPLANE", "Flying vehicle with wings and engines"),
-    ("VOLCANO", "Mountain that can erupt with lava"),
-    ("PENGUIN", "Black and white bird that cannot fly"),
-    ("TREASURE", "Valuable collection of precious items"),
-    ("TORNADO", "Spinning column of air and debris"),
-    ("DINOSAUR", "Extinct prehistoric reptile"),
-    ("SPACESHIP", "Vehicle designed for space travel"),
-    ("WATERFALL", "Water flowing over a cliff or rocks"),
-    ("LIGHTHOUSE", "Tower with bright light to guide ships"),
-    ("SNOWFLAKE", "Unique ice crystal that falls from sky"),
-    ("JELLYFISH", "Transparent sea creature with tentacles"),
-    ("KANGAROO", "Hopping marsupial from Australia"),
-    ("FIREWORKS", "Explosive displays of colored lights"),
-    ("TELESCOPE", "Instrument for viewing distant objects"),
-    ("CROCODILE", "Large reptile with powerful jaws"),
-    ("HURRICANE", "Powerful rotating storm system"),
-    ("MUSHROOM", "Fungus that grows from the ground"),
-    ("PEACOCK", "Colorful bird with magnificent tail feathers"),
-    ("SUBMARINE", "Underwater vessel for ocean exploration"),
-    ("DRAGONFLY", "Insect with four transparent wings"),
-    ("SUNFLOWER", "Tall yellow flower that follows the sun"),
-    ("BASKETBALL", "Sport played with orange ball and hoops"),
-    ("STRAWBERRY", "Red berry with seeds on the outside"),
-    ("HELICOPTER", "Aircraft with rotating blades overhead"),
-    ("PINEAPPLE", "Tropical fruit with spiky exterior"),
-    ("WATERMELON", "Large green fruit with red flesh inside"),
-    ("SAXOPHONE", "Brass wind instrument with curved shape"),
-    ("CHAMELEON", "Lizard that changes color for camouflage"),
-    ("BLIZZARD", "Severe snowstorm with strong winds"),
-]
+WORD_PACKS = {
+    "all": [
+        ("RAINBOW", "Colorful light display in sky during rain"),
+        ("PYTHON", "A popular programming language"),
+        ("COMPUTER", "Electronic device for processing data"),
+        ("KEYBOARD", "Input device with keys"),
+        ("ELEPHANT", "Largest land animal with trunk"),
+        ("MOUNTAIN", "Large natural elevation of earth"),
+        ("OCEAN", "Vast body of salt water"),
+        ("BUTTERFLY", "Insect with colorful wings"),
+        ("GUITAR", "String musical instrument"),
+        ("CAMERA", "Device for taking photographs"),
+        ("LIBRARY", "Place with many books"),
+        ("PIZZA", "Italian dish with cheese and toppings"),
+        ("CASTLE", "Large fortified building"),
+        ("ROCKET", "Vehicle for space travel"),
+        ("DIAMOND", "Precious gemstone"),
+        ("SANDWICH", "Food made between two slices of bread"),
+        ("TELEPHONE", "Device used for voice communication"),
+        ("BICYCLE", "Two-wheeled vehicle powered by pedaling"),
+        ("CHOCOLATE", "Sweet treat made from cocoa beans"),
+        ("UMBRELLA", "Portable shelter from rain or sun"),
+        ("AIRPLANE", "Flying vehicle with wings and engines"),
+        ("VOLCANO", "Mountain that can erupt with lava"),
+        ("PENGUIN", "Black and white bird that cannot fly"),
+        ("TREASURE", "Valuable collection of precious items"),
+        ("TORNADO", "Spinning column of air and debris"),
+        ("DINOSAUR", "Extinct prehistoric reptile"),
+        ("SPACESHIP", "Vehicle designed for space travel"),
+        ("WATERFALL", "Water flowing over a cliff or rocks"),
+        ("LIGHTHOUSE", "Tower with bright light to guide ships"),
+        ("SNOWFLAKE", "Unique ice crystal that falls from sky"),
+        ("JELLYFISH", "Transparent sea creature with tentacles"),
+        ("KANGAROO", "Hopping marsupial from Australia"),
+        ("FIREWORKS", "Explosive displays of colored lights"),
+        ("TELESCOPE", "Instrument for viewing distant objects"),
+        ("CROCODILE", "Large reptile with powerful jaws"),
+        ("HURRICANE", "Powerful rotating storm system"),
+        ("MUSHROOM", "Fungus that grows from the ground"),
+        ("PEACOCK", "Colorful bird with magnificent tail feathers"),
+        ("SUBMARINE", "Underwater vessel for ocean exploration"),
+        ("DRAGONFLY", "Insect with four transparent wings"),
+        ("SUNFLOWER", "Tall yellow flower that follows the sun"),
+        ("BASKETBALL", "Sport played with orange ball and hoops"),
+        ("STRAWBERRY", "Red berry with seeds on the outside"),
+        ("HELICOPTER", "Aircraft with rotating blades overhead"),
+        ("PINEAPPLE", "Tropical fruit with spiky exterior"),
+        ("WATERMELON", "Large green fruit with red flesh inside"),
+        ("SAXOPHONE", "Brass wind instrument with curved shape"),
+        ("CHAMELEON", "Lizard that changes color for camouflage"),
+        ("BLIZZARD", "Severe snowstorm with strong winds"),
+    ],
+    "animals": [
+        ("ELEPHANT", "Largest land animal with trunk"),
+        ("BUTTERFLY", "Insect with colorful wings"),
+        ("PENGUIN", "Black and white bird that cannot fly"),
+        ("DINOSAUR", "Extinct prehistoric reptile"),
+        ("JELLYFISH", "Transparent sea creature with tentacles"),
+        ("KANGAROO", "Hopping marsupial from Australia"),
+        ("CROCODILE", "Large reptile with powerful jaws"),
+        ("PEACOCK", "Colorful bird with magnificent tail feathers"),
+        ("DRAGONFLY", "Insect with four transparent wings"),
+        ("CHAMELEON", "Lizard that changes color for camouflage"),
+    ],
+    "tech": [
+        ("PYTHON", "A popular programming language"),
+        ("COMPUTER", "Electronic device for processing data"),
+        ("KEYBOARD", "Input device with keys"),
+        ("CAMERA", "Device for taking photographs"),
+        ("ROCKET", "Vehicle for space travel"),
+        ("TELEPHONE", "Device used for voice communication"),
+        ("AIRPLANE", "Flying vehicle with wings and engines"),
+        ("SPACESHIP", "Vehicle designed for space travel"),
+        ("LIGHTHOUSE", "Tower with bright light to guide ships"),
+        ("TELESCOPE", "Instrument for viewing distant objects"),
+        ("SUBMARINE", "Underwater vessel for ocean exploration"),
+        ("HELICOPTER", "Aircraft with rotating blades overhead"),
+        ("SAXOPHONE", "Brass wind instrument with curved shape"),
+    ],
+    "nature": [
+        ("RAINBOW", "Colorful light display in sky during rain"),
+        ("MOUNTAIN", "Large natural elevation of earth"),
+        ("OCEAN", "Vast body of salt water"),
+        ("DIAMOND", "Precious gemstone"),
+        ("UMBRELLA", "Portable shelter from rain or sun"),
+        ("VOLCANO", "Mountain that can erupt with lava"),
+        ("TORNADO", "Spinning column of air and debris"),
+        ("WATERFALL", "Water flowing over a cliff or rocks"),
+        ("SNOWFLAKE", "Unique ice crystal that falls from sky"),
+        ("HURRICANE", "Powerful rotating storm system"),
+        ("MUSHROOM", "Fungus that grows from the ground"),
+        ("SUNFLOWER", "Tall yellow flower that follows the sun"),
+        ("BLIZZARD", "Severe snowstorm with strong winds"),
+    ],
+    "food": [
+        ("PIZZA", "Italian dish with cheese and toppings"),
+        ("SANDWICH", "Food made between two slices of bread"),
+        ("CHOCOLATE", "Sweet treat made from cocoa beans"),
+        ("STRAWBERRY", "Red berry with seeds on the outside"),
+        ("PINEAPPLE", "Tropical fruit with spiky exterior"),
+        ("WATERMELON", "Large green fruit with red flesh inside"),
+    ],
+}
+
+DEFAULT_WORD_LIST = WORD_PACKS["all"]
 
 
 class HangmanState:
-    def __init__(self, word_list=None, max_wrong=6, chooser=None, difficulty="medium"):
+    def __init__(self, word_list=None, max_wrong=6, chooser=None, difficulty="medium", theme="all"):
         self.word_list = list(word_list or DEFAULT_WORD_LIST)
         self.max_wrong = max_wrong
         self.chooser = chooser or random.choice
         self.difficulty = "medium"
+        self.theme = "all"
         self.word = ""
         self.hint = ""
         self.guessed_letters = set()
         self.wrong_guesses = 0
         self.game_active = False
         self.set_difficulty(difficulty)
+        self.set_theme(theme)
 
     @property
     def available_difficulties(self):
         return tuple(DIFFICULTY_RULES.keys())
+
+    @property
+    def available_themes(self):
+        return tuple(WORD_PACKS.keys())
 
     @property
     def masked_word(self):
@@ -95,12 +155,28 @@ class HangmanState:
             raise ValueError(f"Unsupported difficulty: {difficulty}")
         self.difficulty = level
 
+    def set_theme(self, theme):
+        group = (theme or "").strip().lower()
+        if group not in WORD_PACKS:
+            raise ValueError(f"Unsupported theme: {theme}")
+        self.theme = group
+
+    def _themed_words(self):
+        if self.theme == "all":
+            return list(self.word_list)
+        allowed_words = {word for word, _ in WORD_PACKS[self.theme]}
+        themed = [item for item in self.word_list if item[0] in allowed_words]
+        if themed:
+            return themed
+        return list(self.word_list)
+
     def _filtered_words(self):
         min_len, max_len = DIFFICULTY_RULES[self.difficulty]
-        filtered = [item for item in self.word_list if min_len <= len(item[0]) <= max_len]
+        themed = self._themed_words()
+        filtered = [item for item in themed if min_len <= len(item[0]) <= max_len]
         if filtered:
             return filtered
-        return self.word_list
+        return themed
 
     def reset(self):
         pool = self._filtered_words()

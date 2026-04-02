@@ -17,6 +17,9 @@ A classic word-guessing game implemented in Python using Tkinter for the graphic
 - **Modular Logic Layer**: Core game rules are separated from UI for easier maintenance and testing.
 - **Difficulty Modes**: Easy, Medium, and Hard word pools based on word length.
 - **Persistent Progress**: Games played, wins, and streak records are saved across sessions.
+- **Theme Packs**: Switch between All, Animals, Tech, Nature, and Food word sets.
+- **Achievements**: Unlock milestone badges such as First Win and Perfect Round.
+- **Local Leaderboard**: Top scores are tracked locally with difficulty and theme context.
 - **Optimized Performance**: Efficient rendering and state management for smooth gameplay.
 - **Word Database**: 50+ curated words with hints covering various categories including animals, objects, places, and more.
 
@@ -54,7 +57,7 @@ A classic word-guessing game implemented in Python using Tkinter for the graphic
 ## Saved Stats
 
 - A `stats.json` file is created automatically in the project directory.
-- It stores total games, wins, losses, current streak, and best streak.
+- It stores total games, wins, losses, streaks, unlocked achievements, and top leaderboard entries.
 
 ## Run Tests
 

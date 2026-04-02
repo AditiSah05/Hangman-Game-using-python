@@ -23,7 +23,7 @@ class HangmanGame:
         # Create gradient background effect
         self.root.configure(bg='#6B7FCC')
         
-        self.state = HangmanState(max_wrong=6, difficulty='medium')
+        self.state = HangmanState(max_wrong=6, difficulty='medium', theme='all')
         self.stats_store = StatsStore("stats.json")
         self.stats = self.stats_store.load()
         
@@ -39,6 +39,20 @@ class HangmanGame:
         
         self.setup_ui()
         self.new_game()
+
+    def _unlock_achievement(self, label):
+        if label not in self.stats['achievements']:
+            self.stats['achievements'].append(label)
+            return True
+        return False
+
+    def _round_score(self, won, wrong_guesses):
+        if not won:
+            return 0
+        base = max(self.state.max_wrong - wrong_guesses, 0) * 10
+        difficulty_bonus = {'easy': 5, 'medium': 10, 'hard': 20}[self.state.difficulty]
+        theme_bonus = 2 if self.state.theme != 'all' else 0
+        return base + difficulty_bonus + theme_bonus
     
     def play_sound_async(self, sound_type):
         """Play sound in a separate thread to avoid blocking UI"""
@@ -108,6 +122,23 @@ class HangmanGame:
         difficulty_menu.config(bg='white', fg='#2C3E50', relief='solid', bd=1, width=8)
         difficulty_menu.pack(side='left', padx=(8, 18))
 
+        tk.Label(controls_frame, text="Theme:",
+                 font=('Arial', 11, 'bold'), bg='white', fg='#2C3E50').pack(side='left')
+
+        self.theme_var = tk.StringVar(value='All')
+        theme_menu = tk.OptionMenu(
+            controls_frame,
+            self.theme_var,
+            'All',
+            'Animals',
+            'Tech',
+            'Nature',
+            'Food',
+            command=self.on_theme_change,
+        )
+        theme_menu.config(bg='white', fg='#2C3E50', relief='solid', bd=1, width=9)
+        theme_menu.pack(side='left', padx=(8, 18))
+
         self.stats_label = tk.Label(controls_frame, text="",
                                     font=('Arial', 10), bg='white', fg='#34495E')
         self.stats_label.pack(side='left')
@@ -142,6 +173,16 @@ class HangmanGame:
                           bg='white', fg='#34495E',
                           wraplength=500, justify='left')
         self.guessed_label.pack(pady=(0, 16))
+
+        self.achievements_label = tk.Label(right_frame, text="Achievements: None yet",
+                           font=('Arial', 10), bg='white', fg='#2C3E50',
+                           wraplength=500, justify='left')
+        self.achievements_label.pack(pady=(0, 8))
+
+        self.leaderboard_label = tk.Label(right_frame, text="Leaderboard: No scores yet",
+                          font=('Arial', 10), bg='white', fg='#2C3E50',
+                          wraplength=500, justify='left')
+        self.leaderboard_label.pack(pady=(0, 12))
         
         # Letter buttons - optimized grid creation
         letters_frame = tk.Frame(right_frame, bg='white')
@@ -179,23 +220,71 @@ class HangmanGame:
         self.new_game()
         self.status_label.config(text=f"Difficulty set to {choice}. Good luck!")
 
+    def on_theme_change(self, choice):
+        level = (choice or "All").strip().lower()
+        self.state.set_theme(level)
+        self.new_game()
+        self.status_label.config(text=f"Theme set to {choice}.")
+
     def update_stats_display(self):
         played = self.stats['games_played']
         wins = self.stats['wins']
         best = self.stats['best_streak']
         self.stats_label.config(text=f"Played: {played}  Wins: {wins}  Best Streak: {best}")
 
-    def record_game_result(self, won):
+        recent_badges = self.stats['achievements'][-3:]
+        if recent_badges:
+            badge_text = ', '.join(recent_badges)
+            self.achievements_label.config(text=f"Achievements: {badge_text}")
+        else:
+            self.achievements_label.config(text="Achievements: None yet")
+
+        board = self.stats['leaderboard'][:3]
+        if board:
+            rows = [
+                f"{idx + 1}. {entry['name']} {entry['score']} pts ({entry['difficulty'].title()}/{entry['theme'].title()})"
+                for idx, entry in enumerate(board)
+            ]
+            self.leaderboard_label.config(text="Leaderboard: " + ' | '.join(rows))
+        else:
+            self.leaderboard_label.config(text="Leaderboard: No scores yet")
+
+    def record_game_result(self, won, wrong_guesses):
         self.stats['games_played'] += 1
+        unlocked_now = []
+
         if won:
             self.stats['wins'] += 1
             self.stats['current_streak'] += 1
             self.stats['best_streak'] = max(self.stats['best_streak'], self.stats['current_streak'])
+
+            score = self._round_score(won=True, wrong_guesses=wrong_guesses)
+            self.stats['leaderboard'].append(
+                {
+                    'name': 'You',
+                    'score': score,
+                    'difficulty': self.state.difficulty,
+                    'theme': self.state.theme,
+                }
+            )
+            self.stats['leaderboard'].sort(key=lambda item: item['score'], reverse=True)
+            self.stats['leaderboard'] = self.stats['leaderboard'][:10]
+
+            if self.stats['wins'] == 1 and self._unlock_achievement('First Win'):
+                unlocked_now.append('First Win')
+            if self.stats['current_streak'] >= 3 and self._unlock_achievement('Hat Trick'):
+                unlocked_now.append('Hat Trick')
+            if wrong_guesses == 0 and self._unlock_achievement('Perfect Round'):
+                unlocked_now.append('Perfect Round')
+            if self.state.difficulty == 'hard' and self._unlock_achievement('Hard Mode Hero'):
+                unlocked_now.append('Hard Mode Hero')
         else:
             self.stats['losses'] += 1
             self.stats['current_streak'] = 0
+
         self.stats_store.save(self.stats)
         self.update_stats_display()
+        return unlocked_now
     
     def on_key_press(self, event):
         """Handle keyboard input"""
@@ -283,7 +372,7 @@ class HangmanGame:
     
     def game_over(self, won):
         self.state.game_active = False
-        self.record_game_result(won)
+        unlocked_now = self.record_game_result(won, self.state.wrong_guesses)
         
         # Disable all buttons at once
         for btn in self.letter_buttons.values():
@@ -291,19 +380,23 @@ class HangmanGame:
         
         if won:
             self.play_sound_async('win')
-            self.root.after(450, lambda: self._show_game_over_dialog(True))
+            self.root.after(450, lambda: self._show_game_over_dialog(True, unlocked_now))
         else:
             self.play_sound_async('lose')
-            self.root.after(1300, lambda: self._show_game_over_dialog(False))
+            self.root.after(1300, lambda: self._show_game_over_dialog(False, unlocked_now))
     
-    def _show_game_over_dialog(self, won):
+    def _show_game_over_dialog(self, won, unlocked_now):
         """Show game over dialog after sound completes"""
+        badge_line = ""
+        if unlocked_now:
+            badge_line = "\nUnlocked: " + ', '.join(unlocked_now)
+
         if won:
             result = messagebox.askyesno("🎉 Congratulations!", 
-                              f"You won! The word was: {self.state.word}\n\nPlay again?")
+                              f"You won! The word was: {self.state.word}{badge_line}\n\nPlay again?")
         else:
             result = messagebox.askyesno("💀 Game Over", 
-                              f"You lost! The word was: {self.state.word}\n\nPlay again?")
+                              f"You lost! The word was: {self.state.word}{badge_line}\n\nPlay again?")
         
         if result:
             self.new_game()
