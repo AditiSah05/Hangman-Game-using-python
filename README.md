@@ -63,17 +63,27 @@ Files:
 - `frontend/index.html`
 - `frontend/style.css`
 - `frontend/script.js`
+- `web_server.py`
+
+New web features:
+
+- Profile system (`Player`, `Player2`, etc.)
+- Shared `stats.json` persistence through API
+- Custom pack import/export as JSON per profile
 
 Run options:
 
-1. Open `frontend/index.html` directly in your browser.
-2. Or serve with Python for a local site:
+1. Start the API-enabled local server:
 
 ```bash
-python -m http.server 5500
+python web_server.py
 ```
 
 Then open `http://localhost:5500/frontend/`.
+
+API endpoint:
+
+- `http://localhost:5500/api/stats`
 
 ## Project Structure
 

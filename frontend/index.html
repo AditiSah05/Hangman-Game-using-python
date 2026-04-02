@@ -20,6 +20,16 @@
       </div>
     </section>
 
+    <section class="profile-row">
+      <label for="profileSelect">Profile</label>
+      <select id="profileSelect"></select>
+      <button id="addProfileBtn">+ Profile</button>
+      <span id="activeProfileBadge" class="profile-badge">Active: Player</span>
+      <button id="importPackBtn">Import Pack</button>
+      <button id="exportPackBtn">Export Pack</button>
+      <input id="importPackInput" type="file" accept="application/json" hidden />
+    </section>
+
     <section class="board">
       <div class="left-col">
         <h1 id="wordMask">_ _ _ _ _</h1>
@@ -29,6 +39,13 @@
         <div class="meta-row">
           <span id="missesText">Misses: 0/6</span>
           <span id="timerText">Timer: Off</span>
+        </div>
+
+        <div class="progress-wrap" aria-hidden="true">
+          <div class="progress-label">Rescue Progress</div>
+          <div class="progress-track">
+            <div id="progressFill" class="progress-fill"></div>
+          </div>
         </div>
 
         <div id="keyboard" class="keyboard"></div>
@@ -48,6 +65,8 @@
       </div>
     </section>
   </main>
+
+  <div id="toastStack" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
 
   <script src="script.js"></script>
 </body>
