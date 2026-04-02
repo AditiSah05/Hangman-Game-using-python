@@ -147,6 +147,28 @@ class HangmanStateTests(unittest.TestCase):
         self.assertEqual(state.wrong_guesses, 1)
         self.assertFalse(state.game_active)
 
+    def test_custom_theme_uses_custom_words(self):
+        state = HangmanState(
+            chooser=lambda items: items[0],
+            theme="custom",
+            custom_words=[("ORANGE", "A citrus fruit")],
+        )
+
+        state.reset()
+
+        self.assertEqual(state.word, "ORANGE")
+
+    def test_set_custom_words_sanitizes_entries(self):
+        state = self._state()
+        state.set_custom_words([
+            ("Valid", "good"),
+            ("1BAD", "bad"),
+            ("A", "short"),
+            ("ALSO", ""),
+        ])
+
+        self.assertEqual(state.custom_words, [("VALID", "good")])
+
 
 if __name__ == "__main__":
     unittest.main()

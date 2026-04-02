@@ -24,6 +24,9 @@ A classic word-guessing game implemented in Python using Tkinter for the graphic
 - **Round History**: See your recent rounds with result, score, and mode details.
 - **Timer Mode**: Optional countdown per guess for challenge gameplay.
 - **Hint Economy**: Use limited hints each round that reveal a letter and cost an attempt.
+- **Settings Screen**: Configure timer length, hint count, default difficulty/theme, and sound toggle.
+- **Custom Word Pack Editor**: Add and remove your own word-hint pairs directly in-app.
+- **Pause/Resume Timer**: Pause active rounds and continue without losing progress.
 - **Optimized Performance**: Efficient rendering and state management for smooth gameplay.
 - **Word Database**: 50+ curated words with hints covering various categories including animals, objects, places, and more.
 

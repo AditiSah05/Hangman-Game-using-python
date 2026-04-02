@@ -24,17 +24,25 @@ class HangmanGame:
         # Create gradient background effect
         self.root.configure(bg='#6B7FCC')
         
-        self.state = HangmanState(max_wrong=6, difficulty='medium', theme='all')
         self.stats_store = StatsStore("stats.json")
         self.stats = self.stats_store.load()
         self.player_name = self.stats.get('player_name', 'Player')
 
-        self.turn_seconds = 15
+        custom_words = [(item['word'], item['hint']) for item in self.stats.get('custom_words', [])]
+        difficulty = self.stats.get('default_difficulty', 'medium')
+        theme = self.stats.get('default_theme', 'all')
+        try:
+            self.state = HangmanState(max_wrong=6, difficulty=difficulty, theme=theme, custom_words=custom_words)
+        except ValueError:
+            self.state = HangmanState(max_wrong=6, difficulty='medium', theme='all', custom_words=custom_words)
+
+        self.turn_seconds = self.stats.get('turn_seconds', 15)
         self.turn_time_left = self.turn_seconds
         self.timer_after_id = None
-        self.hints_per_round = 2
+        self.hints_per_round = self.stats.get('hints_per_round', 2)
         self.hints_remaining = self.hints_per_round
         self.hint_penalties = 0
+        self.is_paused = False
         
         # Pre-calculate hangman drawing coordinates
         self.hangman_parts = [
@@ -80,6 +88,8 @@ class HangmanGame:
     
     def play_sound_async(self, sound_type):
         """Play sound in a separate thread to avoid blocking UI"""
+        if not self.stats.get('sound_enabled', True):
+            return
         if SOUND_AVAILABLE and sys.platform == 'win32':
             threading.Thread(target=self._play_sound, args=(sound_type,), daemon=True).start()
         else:
@@ -147,7 +157,7 @@ class HangmanGame:
         tk.Label(controls_frame, text="Difficulty:",
                  font=('Arial', 11, 'bold'), bg='white', fg='#2C3E50').pack(side='left')
 
-        self.difficulty_var = tk.StringVar(value='Medium')
+        self.difficulty_var = tk.StringVar(value=self.state.difficulty.title())
         difficulty_menu = tk.OptionMenu(
             controls_frame,
             self.difficulty_var,
@@ -162,7 +172,7 @@ class HangmanGame:
         tk.Label(controls_frame, text="Theme:",
                  font=('Arial', 11, 'bold'), bg='white', fg='#2C3E50').pack(side='left')
 
-        self.theme_var = tk.StringVar(value='All')
+        self.theme_var = tk.StringVar(value=self.state.theme.title())
         theme_menu = tk.OptionMenu(
             controls_frame,
             self.theme_var,
@@ -171,6 +181,7 @@ class HangmanGame:
             'Tech',
             'Nature',
             'Food',
+            'Custom',
             command=self.on_theme_change,
         )
         theme_menu.config(bg='white', fg='#2C3E50', relief='solid', bd=1, width=9)
@@ -184,6 +195,16 @@ class HangmanGame:
                           font=('Arial', 10, 'bold'),
                           activebackground='white')
         timer_toggle.pack(side='left', padx=(0, 12))
+
+        custom_pack_btn = tk.Button(controls_frame, text="Custom Pack",
+                        font=('Arial', 9, 'bold'), bg='#1B4F72', fg='white',
+                        relief='flat', cursor='hand2', command=self.open_custom_pack_window)
+        custom_pack_btn.pack(side='left', padx=(0, 8))
+
+        settings_btn = tk.Button(controls_frame, text="Settings",
+                     font=('Arial', 9, 'bold'), bg='#515A5A', fg='white',
+                     relief='flat', cursor='hand2', command=self.open_settings_window)
+        settings_btn.pack(side='left', padx=(0, 12))
 
         self.stats_label = tk.Label(controls_frame, text="",
                                     font=('Arial', 10), bg='white', fg='#34495E')
@@ -276,7 +297,15 @@ class HangmanGame:
                                         activebackground='#1F2D3A',
                                         relief='flat', cursor='hand2',
                                         command=self.new_game)
-        self.restart_button.pack(side='left')
+        self.restart_button.pack(side='left', padx=(0, 10))
+
+        self.pause_button = tk.Button(action_frame, text="Pause",
+                          font=('Arial', 11, 'bold'),
+                          bg='#7D6608', fg='white',
+                          activebackground='#6E2C00',
+                          relief='flat', cursor='hand2',
+                          command=self.toggle_pause)
+        self.pause_button.pack(side='left')
         
         # Bind keyboard input
         self.root.bind('<Key>', self.on_key_press)
@@ -284,12 +313,20 @@ class HangmanGame:
     def on_difficulty_change(self, choice):
         level = (choice or "Medium").strip().lower()
         self.state.set_difficulty(level)
+        self.stats['default_difficulty'] = level
+        self.stats_store.save(self.stats)
         self.new_game()
         self.status_label.config(text=f"Difficulty set to {choice}. Good luck!")
 
     def on_theme_change(self, choice):
         level = (choice or "All").strip().lower()
+        if level == 'custom' and not self.stats.get('custom_words', []):
+            self.status_label.config(text="Custom pack is empty. Add words first.")
+            self.theme_var.set(self.state.theme.title())
+            return
         self.state.set_theme(level)
+        self.stats['default_theme'] = level
+        self.stats_store.save(self.stats)
         self.new_game()
         self.status_label.config(text=f"Theme set to {choice}.")
 
@@ -306,11 +343,141 @@ class HangmanGame:
     def on_timer_toggle(self):
         self.stats['timer_enabled'] = bool(self.timer_var.get())
         self.stats_store.save(self.stats)
-        if self.timer_var.get() and self.state.game_active:
+        if self.timer_var.get() and self.state.game_active and not self.is_paused:
             self._start_turn_timer(reset=True)
         else:
             self._cancel_turn_timer()
             self.timer_label.config(text="Timer: Off")
+
+    def toggle_pause(self):
+        if not self.state.game_active:
+            return
+        self.is_paused = not self.is_paused
+        if self.is_paused:
+            self._cancel_turn_timer()
+            self.pause_button.config(text='Resume')
+            self.status_label.config(text='Game paused.')
+        else:
+            self.pause_button.config(text='Pause')
+            self.status_label.config(text='Game resumed.')
+            self._start_turn_timer(reset=False)
+
+    def open_settings_window(self):
+        window = tk.Toplevel(self.root)
+        window.title('Settings')
+        window.resizable(False, False)
+        window.configure(bg='white')
+
+        frame = tk.Frame(window, bg='white', padx=16, pady=16)
+        frame.pack(fill='both', expand=True)
+
+        timer_seconds_var = tk.IntVar(value=self.turn_seconds)
+        hints_var = tk.IntVar(value=self.hints_per_round)
+        sound_var = tk.BooleanVar(value=bool(self.stats.get('sound_enabled', True)))
+        default_difficulty_var = tk.StringVar(value=self.state.difficulty.title())
+        default_theme_var = tk.StringVar(value=self.state.theme.title())
+
+        tk.Label(frame, text='Timer seconds (5-60):', bg='white', fg='#2C3E50', font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=(0, 8))
+        tk.Spinbox(frame, from_=5, to=60, textvariable=timer_seconds_var, width=8).grid(row=0, column=1, sticky='w', pady=(0, 8))
+
+        tk.Label(frame, text='Hints per round (0-5):', bg='white', fg='#2C3E50', font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', pady=(0, 8))
+        tk.Spinbox(frame, from_=0, to=5, textvariable=hints_var, width=8).grid(row=1, column=1, sticky='w', pady=(0, 8))
+
+        tk.Checkbutton(frame, text='Enable sound', variable=sound_var, bg='white', activebackground='white').grid(row=2, column=0, sticky='w', pady=(0, 8))
+
+        tk.Label(frame, text='Default difficulty:', bg='white', fg='#2C3E50', font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', pady=(0, 8))
+        tk.OptionMenu(frame, default_difficulty_var, 'Easy', 'Medium', 'Hard').grid(row=3, column=1, sticky='w', pady=(0, 8))
+
+        tk.Label(frame, text='Default theme:', bg='white', fg='#2C3E50', font=('Arial', 10, 'bold')).grid(row=4, column=0, sticky='w', pady=(0, 8))
+        tk.OptionMenu(frame, default_theme_var, 'All', 'Animals', 'Tech', 'Nature', 'Food', 'Custom').grid(row=4, column=1, sticky='w', pady=(0, 8))
+
+        def save_settings():
+            self.turn_seconds = max(5, min(60, int(timer_seconds_var.get())))
+            self.hints_per_round = max(0, min(5, int(hints_var.get())))
+            self.stats['turn_seconds'] = self.turn_seconds
+            self.stats['hints_per_round'] = self.hints_per_round
+            self.stats['sound_enabled'] = bool(sound_var.get())
+            self.stats['default_difficulty'] = default_difficulty_var.get().lower()
+            selected_theme = default_theme_var.get().lower()
+            if selected_theme == 'custom' and not self.stats.get('custom_words', []):
+                selected_theme = 'all'
+            self.stats['default_theme'] = selected_theme
+
+            self.state.set_difficulty(self.stats['default_difficulty'])
+            self.state.set_theme(self.stats['default_theme'])
+            self.difficulty_var.set(self.state.difficulty.title())
+            self.theme_var.set(self.state.theme.title())
+            self.turn_time_left = self.turn_seconds
+            self.stats_store.save(self.stats)
+            self.new_game()
+            self.status_label.config(text='Settings saved.')
+            window.destroy()
+
+        tk.Button(frame, text='Save', command=save_settings, bg='#2C3E50', fg='white', relief='flat').grid(row=5, column=0, pady=(8, 0), sticky='w')
+        tk.Button(frame, text='Cancel', command=window.destroy, bg='#7F8C8D', fg='white', relief='flat').grid(row=5, column=1, pady=(8, 0), sticky='e')
+
+    def open_custom_pack_window(self):
+        window = tk.Toplevel(self.root)
+        window.title('Custom Word Pack')
+        window.resizable(False, False)
+        window.configure(bg='white')
+
+        frame = tk.Frame(window, bg='white', padx=16, pady=16)
+        frame.pack(fill='both', expand=True)
+
+        tk.Label(frame, text='Word:', bg='white', fg='#2C3E50', font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w')
+        word_var = tk.StringVar()
+        tk.Entry(frame, textvariable=word_var, width=18).grid(row=0, column=1, padx=(8, 0), sticky='w')
+
+        tk.Label(frame, text='Hint:', bg='white', fg='#2C3E50', font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', pady=(8, 0))
+        hint_var = tk.StringVar()
+        tk.Entry(frame, textvariable=hint_var, width=28).grid(row=1, column=1, padx=(8, 0), pady=(8, 0), sticky='w')
+
+        listbox = tk.Listbox(frame, width=45, height=8)
+        listbox.grid(row=2, column=0, columnspan=2, pady=(10, 8))
+
+        custom_rows = [dict(item) for item in self.stats.get('custom_words', [])]
+
+        def refresh_listbox():
+            listbox.delete(0, tk.END)
+            for item in custom_rows:
+                listbox.insert(tk.END, f"{item['word']} - {item['hint']}")
+
+        def add_word():
+            word = word_var.get().strip().upper()
+            hint = hint_var.get().strip()
+            if len(word) < 2 or not word.isalpha() or not hint:
+                self.status_label.config(text='Custom words need letters-only word and non-empty hint.')
+                return
+            custom_rows.append({'word': word, 'hint': hint[:120]})
+            word_var.set('')
+            hint_var.set('')
+            refresh_listbox()
+
+        def remove_selected():
+            selected = listbox.curselection()
+            if not selected:
+                return
+            del custom_rows[selected[0]]
+            refresh_listbox()
+
+        def save_custom_pack():
+            self.stats['custom_words'] = custom_rows[:200]
+            self.state.set_custom_words([(item['word'], item['hint']) for item in self.stats['custom_words']])
+            self.stats_store.save(self.stats)
+            if self.state.theme == 'custom' and not self.stats['custom_words']:
+                self.state.set_theme('all')
+                self.theme_var.set('All')
+            self.new_game()
+            self.status_label.config(text='Custom pack saved.')
+            window.destroy()
+
+        tk.Button(frame, text='Add', command=add_word, bg='#1B4F72', fg='white', relief='flat').grid(row=3, column=0, sticky='w')
+        tk.Button(frame, text='Remove Selected', command=remove_selected, bg='#7D6608', fg='white', relief='flat').grid(row=3, column=1, sticky='e')
+        tk.Button(frame, text='Save Pack', command=save_custom_pack, bg='#2C3E50', fg='white', relief='flat').grid(row=4, column=0, pady=(10, 0), sticky='w')
+        tk.Button(frame, text='Close', command=window.destroy, bg='#7F8C8D', fg='white', relief='flat').grid(row=4, column=1, pady=(10, 0), sticky='e')
+
+        refresh_listbox()
 
     def _cancel_turn_timer(self):
         if self.timer_after_id is not None:
@@ -318,7 +485,7 @@ class HangmanGame:
             self.timer_after_id = None
 
     def _start_turn_timer(self, reset=False):
-        if not self.timer_var.get() or not self.state.game_active:
+        if not self.timer_var.get() or not self.state.game_active or self.is_paused:
             self.timer_label.config(text="Timer: Off")
             return
         self._cancel_turn_timer()
@@ -329,7 +496,7 @@ class HangmanGame:
 
     def _tick_timer(self):
         self.timer_after_id = None
-        if not self.timer_var.get() or not self.state.game_active:
+        if not self.timer_var.get() or not self.state.game_active or self.is_paused:
             self.timer_label.config(text="Timer: Off")
             return
 
@@ -342,6 +509,8 @@ class HangmanGame:
         self.timer_after_id = self.root.after(1000, self._tick_timer)
 
     def handle_timeout(self):
+        if self.is_paused:
+            return
         result = self.state.add_wrong_guess()
         if result == 'ignored':
             return
@@ -444,7 +613,7 @@ class HangmanGame:
     
     def on_key_press(self, event):
         """Handle keyboard input"""
-        if not self.state.game_active:
+        if not self.state.game_active or self.is_paused:
             return
         
         letter = event.char.upper()
@@ -474,6 +643,8 @@ class HangmanGame:
     
     def new_game(self):
         self._cancel_turn_timer()
+        self.is_paused = False
+        self.pause_button.config(text='Pause')
         self.state.reset()
         self.hints_remaining = self.hints_per_round
         self.hint_penalties = 0
@@ -497,7 +668,7 @@ class HangmanGame:
         self.update_stats_display()
 
     def use_hint(self):
-        if not self.state.game_active:
+        if not self.state.game_active or self.is_paused:
             return
         if self.hints_remaining <= 0:
             self.status_label.config(text="No hints left this round.")
@@ -544,6 +715,8 @@ class HangmanGame:
         self._start_turn_timer(reset=False)
     
     def guess_letter(self, letter):
+        if self.is_paused:
+            return
         result = self.state.guess(letter)
         if result == 'ignored':
             return

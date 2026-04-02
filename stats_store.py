@@ -6,6 +6,11 @@ DEFAULT_STATS = {
     "schema_version": 2,
     "player_name": "Player",
     "timer_enabled": False,
+    "turn_seconds": 15,
+    "hints_per_round": 2,
+    "sound_enabled": True,
+    "default_difficulty": "medium",
+    "default_theme": "all",
     "games_played": 0,
     "wins": 0,
     "losses": 0,
@@ -14,6 +19,7 @@ DEFAULT_STATS = {
     "achievements": [],
     "leaderboard": [],
     "round_history": [],
+    "custom_words": [],
 }
 
 
@@ -40,6 +46,20 @@ class StatsStore:
 
         timer_enabled = data.get("timer_enabled", DEFAULT_STATS["timer_enabled"])
         merged["timer_enabled"] = bool(timer_enabled)
+
+        turn_seconds = data.get("turn_seconds", DEFAULT_STATS["turn_seconds"])
+        merged["turn_seconds"] = turn_seconds if isinstance(turn_seconds, int) and 5 <= turn_seconds <= 60 else DEFAULT_STATS["turn_seconds"]
+
+        hints_per_round = data.get("hints_per_round", DEFAULT_STATS["hints_per_round"])
+        merged["hints_per_round"] = hints_per_round if isinstance(hints_per_round, int) and 0 <= hints_per_round <= 5 else DEFAULT_STATS["hints_per_round"]
+
+        merged["sound_enabled"] = bool(data.get("sound_enabled", DEFAULT_STATS["sound_enabled"]))
+
+        default_difficulty = data.get("default_difficulty", DEFAULT_STATS["default_difficulty"])
+        merged["default_difficulty"] = default_difficulty if isinstance(default_difficulty, str) else DEFAULT_STATS["default_difficulty"]
+
+        default_theme = data.get("default_theme", DEFAULT_STATS["default_theme"])
+        merged["default_theme"] = default_theme if isinstance(default_theme, str) else DEFAULT_STATS["default_theme"]
 
         int_keys = ("games_played", "wins", "losses", "current_streak", "best_streak")
         for key in int_keys:
@@ -103,6 +123,23 @@ class StatsStore:
                     }
                 )
         merged["round_history"] = sanitized_history[:20]
+
+        custom_words = data.get("custom_words", [])
+        sanitized_custom = []
+        if isinstance(custom_words, list):
+            for item in custom_words:
+                if not isinstance(item, dict):
+                    continue
+                word = item.get("word", "")
+                hint = item.get("hint", "")
+                if not isinstance(word, str) or not isinstance(hint, str):
+                    continue
+                clean_word = word.strip().upper()
+                clean_hint = hint.strip()
+                if len(clean_word) < 2 or not clean_word.isalpha() or not clean_hint:
+                    continue
+                sanitized_custom.append({"word": clean_word, "hint": clean_hint[:120]})
+        merged["custom_words"] = sanitized_custom[:200]
         return merged
 
     def save(self, stats):

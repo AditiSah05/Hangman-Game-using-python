@@ -7,6 +7,8 @@ DIFFICULTY_RULES = {
     "hard": (10, 99),
 }
 
+CUSTOM_THEME = "custom"
+
 WORD_PACKS = {
     "all": [
         ("RAINBOW", "Colorful light display in sky during rain"),
@@ -115,8 +117,9 @@ DEFAULT_WORD_LIST = WORD_PACKS["all"]
 
 
 class HangmanState:
-    def __init__(self, word_list=None, max_wrong=6, chooser=None, difficulty="medium", theme="all"):
+    def __init__(self, word_list=None, max_wrong=6, chooser=None, difficulty="medium", theme="all", custom_words=None):
         self.word_list = list(word_list or DEFAULT_WORD_LIST)
+        self.custom_words = list(custom_words or [])
         self.max_wrong = max_wrong
         self.chooser = chooser or random.choice
         self.difficulty = "medium"
@@ -135,7 +138,7 @@ class HangmanState:
 
     @property
     def available_themes(self):
-        return tuple(WORD_PACKS.keys())
+        return tuple(list(WORD_PACKS.keys()) + [CUSTOM_THEME])
 
     @property
     def masked_word(self):
@@ -157,11 +160,27 @@ class HangmanState:
 
     def set_theme(self, theme):
         group = (theme or "").strip().lower()
-        if group not in WORD_PACKS:
+        if group not in self.available_themes:
             raise ValueError(f"Unsupported theme: {theme}")
         self.theme = group
 
+    def set_custom_words(self, custom_words):
+        cleaned = []
+        for item in custom_words or []:
+            if not isinstance(item, (tuple, list)) or len(item) != 2:
+                continue
+            word = str(item[0]).strip().upper()
+            hint = str(item[1]).strip()
+            if len(word) < 2 or not word.isalpha() or not hint:
+                continue
+            cleaned.append((word, hint))
+        self.custom_words = cleaned
+
     def _themed_words(self):
+        if self.theme == CUSTOM_THEME:
+            if self.custom_words:
+                return list(self.custom_words)
+            return list(self.word_list)
         if self.theme == "all":
             return list(self.word_list)
         allowed_words = {word for word, _ in WORD_PACKS[self.theme]}
