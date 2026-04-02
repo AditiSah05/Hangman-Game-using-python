@@ -1,8 +1,9 @@
 import tkinter as tk
 from tkinter import messagebox
-import random
 import sys
 import threading
+
+from game_logic import HangmanState
 
 # Try to import winsound for Windows
 try:
@@ -21,65 +22,7 @@ class HangmanGame:
         # Create gradient background effect
         self.root.configure(bg='#6B7FCC')
         
-        # Optimized word list - removed duplicate
-        self.word_list = [
-            ('RAINBOW', 'Colorful light display in sky during rain'),
-            ('PYTHON', 'A popular programming language'),
-            ('COMPUTER', 'Electronic device for processing data'),
-            ('KEYBOARD', 'Input device with keys'),
-            ('ELEPHANT', 'Largest land animal with trunk'),
-            ('MOUNTAIN', 'Large natural elevation of earth'),
-            ('OCEAN', 'Vast body of salt water'),
-            ('BUTTERFLY', 'Insect with colorful wings'),
-            ('GUITAR', 'String musical instrument'),
-            ('CAMERA', 'Device for taking photographs'),
-            ('LIBRARY', 'Place with many books'),
-            ('PIZZA', 'Italian dish with cheese and toppings'),
-            ('CASTLE', 'Large fortified building'),
-            ('ROCKET', 'Vehicle for space travel'),
-            ('DIAMOND', 'Precious gemstone'),
-            ('SANDWICH', 'Food made between two slices of bread'),
-            ('TELEPHONE', 'Device used for voice communication'),
-            ('BICYCLE', 'Two-wheeled vehicle powered by pedaling'),
-            ('CHOCOLATE', 'Sweet treat made from cocoa beans'),
-            ('UMBRELLA', 'Portable shelter from rain or sun'),
-            ('AIRPLANE', 'Flying vehicle with wings and engines'),
-            ('VOLCANO', 'Mountain that can erupt with lava'),
-            ('PENGUIN', 'Black and white bird that cannot fly'),
-            ('TREASURE', 'Valuable collection of precious items'),
-            ('TORNADO', 'Spinning column of air and debris'),
-            ('DINOSAUR', 'Extinct prehistoric reptile'),
-            ('SPACESHIP', 'Vehicle designed for space travel'),
-            ('WATERFALL', 'Water flowing over a cliff or rocks'),
-            ('LIGHTHOUSE', 'Tower with bright light to guide ships'),
-            ('SNOWFLAKE', 'Unique ice crystal that falls from sky'),
-            ('JELLYFISH', 'Transparent sea creature with tentacles'),
-            ('KANGAROO', 'Hopping marsupial from Australia'),
-            ('FIREWORKS', 'Explosive displays of colored lights'),
-            ('TELESCOPE', 'Instrument for viewing distant objects'),
-            ('CROCODILE', 'Large reptile with powerful jaws'),
-            ('HURRICANE', 'Powerful rotating storm system'),
-            ('MUSHROOM', 'Fungus that grows from the ground'),
-            ('PEACOCK', 'Colorful bird with magnificent tail feathers'),
-            ('SUBMARINE', 'Underwater vessel for ocean exploration'),
-            ('DRAGONFLY', 'Insect with four transparent wings'),
-            ('SUNFLOWER', 'Tall yellow flower that follows the sun'),
-            ('BASKETBALL', 'Sport played with orange ball and hoops'),
-            ('STRAWBERRY', 'Red berry with seeds on the outside'),
-            ('HELICOPTER', 'Aircraft with rotating blades overhead'),
-            ('PINEAPPLE', 'Tropical fruit with spiky exterior'),
-            ('WATERMELON', 'Large green fruit with red flesh inside'),
-            ('SAXOPHONE', 'Brass wind instrument with curved shape'),
-            ('CHAMELEON', 'Lizard that changes color for camouflage'),
-            ('BLIZZARD', 'Severe snowstorm with strong winds')
-        ]
-        
-        self.word = ''
-        self.hint = ''
-        self.guessed_letters = set()
-        self.wrong_guesses = 0
-        self.max_wrong = 6
-        self.game_active = True
+        self.state = HangmanState(max_wrong=6)
         
         # Pre-calculate hangman drawing coordinates
         self.hangman_parts = [
@@ -163,6 +106,13 @@ class HangmanGame:
                                       font=('Arial', 13, 'bold'),
                                       bg='white', fg='#E74C3C')
         self.counter_label.pack(pady=(0, 20))
+
+        # Guessed letters display
+        self.guessed_label = tk.Label(right_frame, text="Guessed: -",
+                          font=('Arial', 12),
+                          bg='white', fg='#34495E',
+                          wraplength=500, justify='left')
+        self.guessed_label.pack(pady=(0, 16))
         
         # Letter buttons - optimized grid creation
         letters_frame = tk.Frame(right_frame, bg='white')
@@ -182,13 +132,21 @@ class HangmanGame:
                           command=lambda l=letter: self.guess_letter(l))
             btn.grid(row=i // 9, column=i % 9, padx=3, pady=3)
             self.letter_buttons[letter] = btn
+
+        self.restart_button = tk.Button(right_frame, text="Restart",
+                                        font=('Arial', 11, 'bold'),
+                                        bg='#2C3E50', fg='white',
+                                        activebackground='#1F2D3A',
+                                        relief='flat', cursor='hand2',
+                                        command=self.new_game)
+        self.restart_button.pack(pady=(18, 0))
         
         # Bind keyboard input
         self.root.bind('<Key>', self.on_key_press)
     
     def on_key_press(self, event):
         """Handle keyboard input"""
-        if not self.game_active:
+        if not self.state.game_active:
             return
         
         letter = event.char.upper()
@@ -217,12 +175,7 @@ class HangmanGame:
                                        width=3, fill='#2C3E50')
     
     def new_game(self):
-        word_data = random.choice(self.word_list)
-        self.word = word_data[0]
-        self.hint = word_data[1]
-        self.guessed_letters.clear()
-        self.wrong_guesses = 0
-        self.game_active = True
+        self.state.reset()
         
         # Reset canvas
         self.draw_hangman(0)
@@ -233,45 +186,44 @@ class HangmanGame:
         
         # Update displays
         self.update_word_display()
-        self.hint_label.config(text=f"Hint: {self.hint}")
-        self.counter_label.config(text=f"Incorrect: 0/{self.max_wrong}")
+        self.hint_label.config(text=f"Hint: {self.state.hint}")
+        self.counter_label.config(text=f"Incorrect: {self.state.wrong_guesses}/{self.state.max_wrong}")
+        self.guessed_label.config(text="Guessed: -")
     
     def guess_letter(self, letter):
-        if not self.game_active or letter in self.guessed_letters:
+        result = self.state.guess(letter)
+        if result == 'ignored':
             return
         
         # Play click sound asynchronously
         self.play_sound_async('click')
         
-        self.guessed_letters.add(letter)
         self.letter_buttons[letter].config(state='disabled', bg='#95A5D8')
-        
-        if letter not in self.word:
+
+        if result == 'wrong':
             self.play_sound_async('wrong')
-            self.wrong_guesses += 1
-            self.draw_hangman(self.wrong_guesses)
-            self.counter_label.config(text=f"Incorrect: {self.wrong_guesses}/{self.max_wrong}")
-            
-            if self.wrong_guesses >= self.max_wrong:
-                self.game_over(False)
-                return
+            self.draw_hangman(self.state.wrong_guesses)
+            self.counter_label.config(text=f"Incorrect: {self.state.wrong_guesses}/{self.state.max_wrong}")
         else:
             self.play_sound_async('correct')
         
         self.update_word_display()
-        
-        # Check if won - optimized check
-        if all(c in self.guessed_letters for c in self.word):
+        guessed_text = ' '.join(sorted(self.state.guessed_letters))
+        self.guessed_label.config(text=f"Guessed: {guessed_text}")
+
+        if result == 'lost':
+            self.game_over(False)
+            return
+        if result == 'won':
             self.game_over(True)
+            return
     
     def update_word_display(self):
         """Optimized word display update"""
-        display = ' '.join(letter if letter in self.guessed_letters else '_' 
-                          for letter in self.word)
-        self.word_label.config(text=display)
+        self.word_label.config(text=self.state.masked_word)
     
     def game_over(self, won):
-        self.game_active = False
+        self.state.game_active = False
         
         # Disable all buttons at once
         for btn in self.letter_buttons.values():
@@ -288,10 +240,10 @@ class HangmanGame:
         """Show game over dialog after sound completes"""
         if won:
             result = messagebox.askyesno("🎉 Congratulations!", 
-                              f"You won! The word was: {self.word}\n\nPlay again?")
+                              f"You won! The word was: {self.state.word}\n\nPlay again?")
         else:
             result = messagebox.askyesno("💀 Game Over", 
-                              f"You lost! The word was: {self.word}\n\nPlay again?")
+                              f"You lost! The word was: {self.state.word}\n\nPlay again?")
         
         if result:
             self.new_game()

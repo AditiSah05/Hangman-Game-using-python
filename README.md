@@ -13,6 +13,8 @@ A classic word-guessing game implemented in Python using Tkinter for the graphic
   - Victory melody when winning the game
   - Defeat sequence when losing (Windows only; falls back to system bell on other platforms)
 - **Keyboard Support**: Full keyboard input support - press any letter key (A-Z) to make guesses.
+- **Improved In-Game Controls**: Restart button and guessed-letter tracker for clearer play state.
+- **Modular Logic Layer**: Core game rules are separated from UI for easier maintenance and testing.
 - **Optimized Performance**: Efficient rendering and state management for smooth gameplay.
 - **Word Database**: 50+ curated words with hints covering various categories including animals, objects, places, and more.
 
@@ -39,6 +41,18 @@ A classic word-guessing game implemented in Python using Tkinter for the graphic
    ```
 
 4. The game window will open. Start playing by clicking letter buttons or using keyboard input.
+
+## Project Structure
+
+- `app.py`: Tkinter user interface and audio feedback.
+- `game_logic.py`: Standalone game-state and rule engine.
+- `tests/test_game_logic.py`: Unit tests for gameplay behavior.
+
+## Run Tests
+
+```bash
+python -m unittest discover -s tests -v
+```
 
 ## Controls
 
