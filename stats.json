@@ -1,0 +1,19 @@
+{
+  "schema_version": 2,
+  "player_name": "Player",
+  "timer_enabled": false,
+  "turn_seconds": 15,
+  "hints_per_round": 2,
+  "sound_enabled": true,
+  "default_difficulty": "medium",
+  "default_theme": "all",
+  "games_played": 0,
+  "wins": 0,
+  "losses": 0,
+  "current_streak": 0,
+  "best_streak": 0,
+  "achievements": [],
+  "leaderboard": [],
+  "round_history": [],
+  "custom_words": []
+}

@@ -18,11 +18,12 @@ class HangmanGame:
     def __init__(self, root):
         self.root = root
         self.root.title("Hangman Game")
-        self.root.geometry("1000x700")
-        self.root.resizable(False, False)
+        self.root.geometry("1180x820")
+        self.root.minsize(1080, 760)
+        self.root.resizable(True, True)
         
-        # Create gradient background effect
-        self.root.configure(bg='#6B7FCC')
+        # App background approximates a modern web card layout.
+        self.root.configure(bg='#E9EEF8')
         
         self.stats_store = StatsStore("stats.json")
         self.stats = self.stats_store.load()
@@ -115,199 +116,134 @@ class HangmanGame:
             pass
     
     def setup_ui(self):
-        # Main white container
         container = tk.Frame(self.root, bg='white', bd=0)
-        container.place(relx=0.5, rely=0.5, anchor='center', width=900, height=550)
-        
-        container_inner = tk.Frame(container, bg='white')
-        container_inner.pack(expand=True, fill='both', padx=30, pady=30)
-        
-        # Left side - Canvas
-        left_frame = tk.Frame(container_inner, bg='white')
-        left_frame.pack(side='left', padx=(0, 40))
-        
-        self.canvas = tk.Canvas(left_frame, width=350, height=400, 
-                               bg='white', highlightthickness=0)
-        self.canvas.pack()
-        
-        tk.Label(left_frame, text="HANGMAN GAME", 
-                font=('Arial', 18, 'bold'), bg='white', 
-                fg='#2C3E50').pack(pady=(20, 0))
-        
-        # Right side - Game info and letters
-        right_frame = tk.Frame(container_inner, bg='white')
-        right_frame.pack(side='right', fill='both', expand=True)
+        container.pack(expand=True, fill='both', padx=18, pady=18)
 
-        controls_frame = tk.Frame(right_frame, bg='white')
+        top_frame = tk.Frame(container, bg='white')
+        top_frame.pack(fill='x', pady=(0, 10))
+
+        title_label = tk.Label(top_frame, text="HANGMAN", font=('Arial', 22, 'bold'), bg='white', fg='#1E2A4A')
+        title_label.pack(side='left')
+
+        self.status_label = tk.Label(top_frame, text="Pick a letter to start!",
+                                     font=('Arial', 11), bg='white', fg='#566573')
+        self.status_label.pack(side='right')
+
+        controls_frame = tk.Frame(container, bg='white')
         controls_frame.pack(fill='x', pady=(0, 10))
 
-        tk.Label(controls_frame, text="Name:",
-             font=('Arial', 11, 'bold'), bg='white', fg='#2C3E50').pack(side='left')
-
+        tk.Label(controls_frame, text="Name", font=('Arial', 10, 'bold'), bg='white', fg='#2C3E50').pack(side='left')
         self.name_var = tk.StringVar(value=self.player_name)
-        self.name_entry = tk.Entry(controls_frame, textvariable=self.name_var, width=12,
-                       font=('Arial', 10), relief='solid', bd=1)
+        self.name_entry = tk.Entry(controls_frame, textvariable=self.name_var, width=12, font=('Arial', 10), relief='solid', bd=1)
         self.name_entry.pack(side='left', padx=(6, 6))
 
-        save_name_btn = tk.Button(controls_frame, text="Save",
-                      font=('Arial', 9, 'bold'), bg='#2C3E50', fg='white',
-                      relief='flat', cursor='hand2', command=self.on_player_name_save)
-        save_name_btn.pack(side='left', padx=(0, 12))
+        save_name_btn = tk.Button(controls_frame, text="Save", font=('Arial', 9, 'bold'), bg='#2F477A', fg='white',
+                                  relief='flat', cursor='hand2', command=self.on_player_name_save)
+        save_name_btn.pack(side='left', padx=(0, 10))
 
-        tk.Label(controls_frame, text="Difficulty:",
-                 font=('Arial', 11, 'bold'), bg='white', fg='#2C3E50').pack(side='left')
-
+        tk.Label(controls_frame, text="Difficulty", font=('Arial', 10, 'bold'), bg='white', fg='#2C3E50').pack(side='left')
         self.difficulty_var = tk.StringVar(value=self.state.difficulty.title())
-        difficulty_menu = tk.OptionMenu(
-            controls_frame,
-            self.difficulty_var,
-            'Easy',
-            'Medium',
-            'Hard',
-            command=self.on_difficulty_change,
-        )
-        difficulty_menu.config(bg='white', fg='#2C3E50', relief='solid', bd=1, width=8)
-        difficulty_menu.pack(side='left', padx=(8, 18))
+        difficulty_menu = tk.OptionMenu(controls_frame, self.difficulty_var, 'Easy', 'Medium', 'Hard', command=self.on_difficulty_change)
+        difficulty_menu.config(bg='white', fg='#2C3E50', relief='solid', bd=1, width=7)
+        difficulty_menu.pack(side='left', padx=(6, 10))
 
-        tk.Label(controls_frame, text="Theme:",
-                 font=('Arial', 11, 'bold'), bg='white', fg='#2C3E50').pack(side='left')
-
+        tk.Label(controls_frame, text="Theme", font=('Arial', 10, 'bold'), bg='white', fg='#2C3E50').pack(side='left')
         self.theme_var = tk.StringVar(value=self.state.theme.title())
-        theme_menu = tk.OptionMenu(
-            controls_frame,
-            self.theme_var,
-            'All',
-            'Animals',
-            'Tech',
-            'Nature',
-            'Food',
-            'Custom',
-            command=self.on_theme_change,
-        )
-        theme_menu.config(bg='white', fg='#2C3E50', relief='solid', bd=1, width=9)
-        theme_menu.pack(side='left', padx=(8, 18))
+        theme_menu = tk.OptionMenu(controls_frame, self.theme_var, 'All', 'Animals', 'Tech', 'Nature', 'Food', 'Custom', command=self.on_theme_change)
+        theme_menu.config(bg='white', fg='#2C3E50', relief='solid', bd=1, width=8)
+        theme_menu.pack(side='left', padx=(6, 10))
 
         self.timer_var = tk.BooleanVar(value=bool(self.stats.get('timer_enabled', False)))
-        timer_toggle = tk.Checkbutton(controls_frame, text="Timer",
-                          variable=self.timer_var,
-                          command=self.on_timer_toggle,
-                          bg='white', fg='#2C3E50',
-                          font=('Arial', 10, 'bold'),
-                          activebackground='white')
-        timer_toggle.pack(side='left', padx=(0, 12))
+        timer_toggle = tk.Checkbutton(controls_frame, text="Timer", variable=self.timer_var, command=self.on_timer_toggle,
+                                      bg='white', fg='#2C3E50', font=('Arial', 10, 'bold'), activebackground='white')
+        timer_toggle.pack(side='left', padx=(0, 8))
 
-        custom_pack_btn = tk.Button(controls_frame, text="Custom Pack",
-                        font=('Arial', 9, 'bold'), bg='#1B4F72', fg='white',
-                        relief='flat', cursor='hand2', command=self.open_custom_pack_window)
-        custom_pack_btn.pack(side='left', padx=(0, 8))
+        custom_pack_btn = tk.Button(controls_frame, text="Custom Pack", font=('Arial', 9, 'bold'), bg='#1B4F72', fg='white',
+                                    relief='flat', cursor='hand2', command=self.open_custom_pack_window)
+        custom_pack_btn.pack(side='left', padx=(0, 6))
 
-        settings_btn = tk.Button(controls_frame, text="Settings",
-                     font=('Arial', 9, 'bold'), bg='#515A5A', fg='white',
-                     relief='flat', cursor='hand2', command=self.open_settings_window)
-        settings_btn.pack(side='left', padx=(0, 12))
+        settings_btn = tk.Button(controls_frame, text="Settings", font=('Arial', 9, 'bold'), bg='#515A5A', fg='white',
+                                 relief='flat', cursor='hand2', command=self.open_settings_window)
+        settings_btn.pack(side='left')
 
-        self.stats_label = tk.Label(controls_frame, text="",
-                                    font=('Arial', 10), bg='white', fg='#34495E')
-        self.stats_label.pack(side='left')
-        
-        # Word display
-        self.word_label = tk.Label(right_frame, text="", 
-                                   font=('Arial', 36, 'bold'),
-                                   bg='white', fg='#2C3E50',
-                                   justify='center')
-        self.word_label.pack(pady=(0, 20))
+        content_frame = tk.Frame(container, bg='white')
+        content_frame.pack(fill='both', expand=True)
 
-        self.status_label = tk.Label(right_frame, text="Pick a letter to start!",
-                         font=('Arial', 11), bg='white', fg='#566573')
-        self.status_label.pack(pady=(0, 12))
-        
-        # Hint display
-        self.hint_label = tk.Label(right_frame, text="", 
-                                   font=('Arial', 12),
-                                   bg='white', fg='#555',
-                                   wraplength=500, justify='left')
-        self.hint_label.pack(pady=(0, 10))
-        
-        # Incorrect guesses counter
-        self.counter_label = tk.Label(right_frame, text="Incorrect: 0/6", 
-                                      font=('Arial', 13, 'bold'),
-                                      bg='white', fg='#E74C3C')
-        self.counter_label.pack(pady=(0, 6))
+        left_frame = tk.Frame(content_frame, bg='white')
+        left_frame.pack(side='left', fill='y', padx=(0, 18))
 
-        self.timer_label = tk.Label(right_frame, text="Timer: Off",
-                        font=('Arial', 11, 'bold'),
-                        bg='white', fg='#D35400')
-        self.timer_label.pack(pady=(0, 12))
+        self.canvas = tk.Canvas(left_frame, width=370, height=430, bg='white', highlightthickness=0)
+        self.canvas.pack()
 
-        # Guessed letters display
-        self.guessed_label = tk.Label(right_frame, text="Guessed: -",
-                          font=('Arial', 12),
-                          bg='white', fg='#34495E',
-                          wraplength=500, justify='left')
-        self.guessed_label.pack(pady=(0, 16))
+        right_frame = tk.Frame(content_frame, bg='white')
+        right_frame.pack(side='left', fill='both', expand=True)
 
-        self.achievements_label = tk.Label(right_frame, text="Achievements: None yet",
-                           font=('Arial', 10), bg='white', fg='#2C3E50',
-                           wraplength=500, justify='left')
-        self.achievements_label.pack(pady=(0, 8))
+        self.word_label = tk.Label(right_frame, text="", font=('Arial', 34, 'bold'), bg='white', fg='#1E2A4A', justify='center')
+        self.word_label.pack(pady=(4, 10))
 
-        self.leaderboard_label = tk.Label(right_frame, text="Leaderboard: No scores yet",
-                          font=('Arial', 10), bg='white', fg='#2C3E50',
-                          wraplength=500, justify='left')
-        self.leaderboard_label.pack(pady=(0, 12))
+        self.hint_label = tk.Label(right_frame, text="", font=('Arial', 11), bg='white', fg='#555', wraplength=620, justify='left')
+        self.hint_label.pack(anchor='w', pady=(0, 8))
 
-        self.history_label = tk.Label(right_frame, text="Recent rounds: None",
-                          font=('Arial', 10), bg='white', fg='#2C3E50',
-                          wraplength=500, justify='left')
-        self.history_label.pack(pady=(0, 12))
-        
-        # Letter buttons - optimized grid creation
+        status_row = tk.Frame(right_frame, bg='white')
+        status_row.pack(fill='x', pady=(0, 8))
+
+        self.counter_label = tk.Label(status_row, text="Incorrect: 0/6", font=('Arial', 12, 'bold'), bg='white', fg='#D35400')
+        self.counter_label.pack(side='left')
+
+        self.timer_label = tk.Label(status_row, text="Timer: Off", font=('Arial', 11, 'bold'), bg='white', fg='#C0392B')
+        self.timer_label.pack(side='left', padx=(16, 0))
+
+        self.guessed_label = tk.Label(right_frame, text="Guessed: -", font=('Arial', 11), bg='white', fg='#34495E', wraplength=620, justify='left')
+        self.guessed_label.pack(anchor='w', pady=(0, 10))
+
         letters_frame = tk.Frame(right_frame, bg='white')
-        letters_frame.pack()
-        
+        letters_frame.pack(anchor='w', pady=(0, 10))
+
         self.letter_buttons = {}
         alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-        
-        # Create all buttons at once
         for i, letter in enumerate(alphabet):
-            btn = tk.Button(letters_frame, text=letter, width=3, height=1,
-                          font=('Arial', 13, 'bold'),
-                          bg='#6B7FCC', fg='white',
-                          activebackground='#5A6EBB',
-                          relief='flat',
-                          cursor='hand2',
-                          command=lambda l=letter: self.guess_letter(l))
+            btn = tk.Button(letters_frame, text=letter, width=4, height=1,
+                            font=('Arial', 12, 'bold'),
+                            bg='#5A74C9', fg='white',
+                            activebackground='#3F5FBF',
+                            relief='flat', cursor='hand2',
+                            command=lambda l=letter: self.guess_letter(l))
             btn.grid(row=i // 9, column=i % 9, padx=3, pady=3)
             self.letter_buttons[letter] = btn
 
         action_frame = tk.Frame(right_frame, bg='white')
-        action_frame.pack(pady=(10, 0))
+        action_frame.pack(anchor='w', pady=(0, 10))
 
-        self.hint_button = tk.Button(action_frame, text="Hint (2)",
-                         font=('Arial', 11, 'bold'),
-                         bg='#D68910', fg='white',
-                         activebackground='#B9770E',
-                         relief='flat', cursor='hand2',
-                         command=self.use_hint)
-        self.hint_button.pack(side='left', padx=(0, 10))
+        self.hint_button = tk.Button(action_frame, text="Hint (2)", font=('Arial', 10, 'bold'),
+                                     bg='#D68910', fg='white', activebackground='#B9770E',
+                                     relief='flat', cursor='hand2', command=self.use_hint)
+        self.hint_button.pack(side='left', padx=(0, 8))
 
-        self.restart_button = tk.Button(action_frame, text="Restart",
-                                        font=('Arial', 11, 'bold'),
-                                        bg='#2C3E50', fg='white',
-                                        activebackground='#1F2D3A',
-                                        relief='flat', cursor='hand2',
-                                        command=self.new_game)
-        self.restart_button.pack(side='left', padx=(0, 10))
+        self.restart_button = tk.Button(action_frame, text="Restart", font=('Arial', 10, 'bold'),
+                                        bg='#2C3E50', fg='white', activebackground='#1F2D3A',
+                                        relief='flat', cursor='hand2', command=self.new_game)
+        self.restart_button.pack(side='left', padx=(0, 8))
 
-        self.pause_button = tk.Button(action_frame, text="Pause",
-                          font=('Arial', 11, 'bold'),
-                          bg='#7D6608', fg='white',
-                          activebackground='#6E2C00',
-                          relief='flat', cursor='hand2',
-                          command=self.toggle_pause)
+        self.pause_button = tk.Button(action_frame, text="Pause", font=('Arial', 10, 'bold'),
+                                      bg='#7D6608', fg='white', activebackground='#6E2C00',
+                                      relief='flat', cursor='hand2', command=self.toggle_pause)
         self.pause_button.pack(side='left')
-        
-        # Bind keyboard input
+
+        info_row = tk.Frame(right_frame, bg='white')
+        info_row.pack(fill='x', pady=(4, 0))
+
+        self.stats_label = tk.Label(info_row, text="", font=('Arial', 10), bg='white', fg='#34495E', justify='left')
+        self.stats_label.pack(anchor='w')
+
+        self.achievements_label = tk.Label(info_row, text="Achievements: None yet", font=('Arial', 10), bg='white', fg='#2C3E50', wraplength=620, justify='left')
+        self.achievements_label.pack(anchor='w', pady=(2, 0))
+
+        self.leaderboard_label = tk.Label(info_row, text="Leaderboard: No scores yet", font=('Arial', 10), bg='white', fg='#2C3E50', wraplength=620, justify='left')
+        self.leaderboard_label.pack(anchor='w', pady=(2, 0))
+
+        self.history_label = tk.Label(info_row, text="Recent rounds: None", font=('Arial', 10), bg='white', fg='#2C3E50', wraplength=620, justify='left')
+        self.history_label.pack(anchor='w', pady=(2, 0))
+
         self.root.bind('<Key>', self.on_key_press)
 
     def on_difficulty_change(self, choice):
