@@ -204,3 +204,13 @@ class HangmanState:
             self.game_active = False
             return "won"
         return "correct"
+
+    def add_wrong_guess(self):
+        if not self.game_active:
+            return "ignored"
+
+        self.wrong_guesses += 1
+        if self.is_lost:
+            self.game_active = False
+            return "lost"
+        return "wrong"

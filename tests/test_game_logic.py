@@ -137,6 +137,16 @@ class HangmanStateTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             state.set_theme("sports")
 
+    def test_add_wrong_guess_increments_and_can_lose(self):
+        state = self._state(max_wrong=1)
+        state.reset()
+
+        result = state.add_wrong_guess()
+
+        self.assertEqual(result, "lost")
+        self.assertEqual(state.wrong_guesses, 1)
+        self.assertFalse(state.game_active)
+
 
 if __name__ == "__main__":
     unittest.main()

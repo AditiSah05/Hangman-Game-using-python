@@ -14,9 +14,13 @@ class StatsStoreTests(unittest.TestCase):
 
             data = store.load()
 
+            self.assertEqual(data["schema_version"], 2)
+            self.assertEqual(data["player_name"], "Player")
+            self.assertFalse(data["timer_enabled"])
             self.assertEqual(data["games_played"], 0)
             self.assertEqual(data["achievements"], [])
             self.assertEqual(data["leaderboard"], [])
+            self.assertEqual(data["round_history"], [])
 
     def test_load_sanitizes_invalid_payload(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -27,10 +31,16 @@ class StatsStoreTests(unittest.TestCase):
                 "losses": -4,
                 "current_streak": 1,
                 "best_streak": 2,
+                "player_name": "  Ada Lovelace  ",
+                "timer_enabled": 1,
                 "achievements": ["First Win", 123],
                 "leaderboard": [
                     {"name": "You", "score": 80, "difficulty": "hard", "theme": "tech"},
                     {"name": "Bad", "score": -1, "difficulty": "easy", "theme": "all"},
+                ],
+                "round_history": [
+                    {"word": "PYTHON", "result": "Win", "score": 30, "difficulty": "medium", "theme": "tech"},
+                    {"word": "BAD", "result": "Loss", "score": -2, "difficulty": "easy", "theme": "all"},
                 ],
             }
             path.write_text(json.dumps(payload), encoding="utf-8")
@@ -38,10 +48,15 @@ class StatsStoreTests(unittest.TestCase):
 
             data = store.load()
 
+            self.assertEqual(data["schema_version"], 2)
+            self.assertEqual(data["player_name"], "Ada Lovelace")
+            self.assertTrue(data["timer_enabled"])
             self.assertEqual(data["losses"], 0)
             self.assertEqual(data["achievements"], ["First Win"])
             self.assertEqual(len(data["leaderboard"]), 1)
             self.assertEqual(data["leaderboard"][0]["score"], 80)
+            self.assertEqual(len(data["round_history"]), 1)
+            self.assertEqual(data["round_history"][0]["word"], "PYTHON")
 
 
 if __name__ == "__main__":

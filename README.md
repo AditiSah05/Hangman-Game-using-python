@@ -20,6 +20,10 @@ A classic word-guessing game implemented in Python using Tkinter for the graphic
 - **Theme Packs**: Switch between All, Animals, Tech, Nature, and Food word sets.
 - **Achievements**: Unlock milestone badges such as First Win and Perfect Round.
 - **Local Leaderboard**: Top scores are tracked locally with difficulty and theme context.
+- **Player Profiles**: Save your player name so leaderboard scores are personal.
+- **Round History**: See your recent rounds with result, score, and mode details.
+- **Timer Mode**: Optional countdown per guess for challenge gameplay.
+- **Hint Economy**: Use limited hints each round that reveal a letter and cost an attempt.
 - **Optimized Performance**: Efficient rendering and state management for smooth gameplay.
 - **Word Database**: 50+ curated words with hints covering various categories including animals, objects, places, and more.
 
@@ -52,18 +56,39 @@ A classic word-guessing game implemented in Python using Tkinter for the graphic
 - `app.py`: Tkinter user interface and audio feedback.
 - `game_logic.py`: Standalone game-state and rule engine.
 - `stats_store.py`: Local JSON-backed progress persistence.
+- `build_windows.bat`: One-click Windows build script using PyInstaller.
+- `build_windows.ps1`: PowerShell build script using PyInstaller.
 - `tests/test_game_logic.py`: Unit tests for gameplay behavior.
+- `tests/test_stats_store.py`: Unit tests for stats persistence and sanitization.
 
 ## Saved Stats
 
 - A `stats.json` file is created automatically in the project directory.
-- It stores total games, wins, losses, streaks, unlocked achievements, and top leaderboard entries.
+- It stores schema version, player name, timer preference, game stats, achievements, leaderboard, and recent round history.
 
 ## Run Tests
 
 ```bash
 python -m unittest discover -s tests -v
 ```
+
+## Build Windows Executable
+
+Using Command Prompt:
+
+```bat
+build_windows.bat
+```
+
+Using PowerShell:
+
+```powershell
+./build_windows.ps1
+```
+
+Output executable folder:
+
+- `dist/Hangman/`
 
 ## Controls
 

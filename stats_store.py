@@ -3,6 +3,9 @@ from pathlib import Path
 
 
 DEFAULT_STATS = {
+    "schema_version": 2,
+    "player_name": "Player",
+    "timer_enabled": False,
     "games_played": 0,
     "wins": 0,
     "losses": 0,
@@ -10,6 +13,7 @@ DEFAULT_STATS = {
     "best_streak": 0,
     "achievements": [],
     "leaderboard": [],
+    "round_history": [],
 }
 
 
@@ -27,6 +31,16 @@ class StatsStore:
             return dict(DEFAULT_STATS)
 
         merged = dict(DEFAULT_STATS)
+        merged["schema_version"] = 2
+
+        player_name = data.get("player_name", DEFAULT_STATS["player_name"])
+        if isinstance(player_name, str):
+            clean_name = player_name.strip()
+            merged["player_name"] = clean_name[:20] if clean_name else DEFAULT_STATS["player_name"]
+
+        timer_enabled = data.get("timer_enabled", DEFAULT_STATS["timer_enabled"])
+        merged["timer_enabled"] = bool(timer_enabled)
+
         int_keys = ("games_played", "wins", "losses", "current_streak", "best_streak")
         for key in int_keys:
             value = data.get(key, DEFAULT_STATS[key])
@@ -61,6 +75,34 @@ class StatsStore:
                     }
                 )
         merged["leaderboard"] = sanitized_board[:10]
+
+        history = data.get("round_history", [])
+        sanitized_history = []
+        if isinstance(history, list):
+            for row in history:
+                if not isinstance(row, dict):
+                    continue
+                word = row.get("word", "")
+                result = row.get("result", "")
+                score = row.get("score", 0)
+                difficulty = row.get("difficulty", "medium")
+                theme = row.get("theme", "all")
+                if not isinstance(word, str) or not isinstance(result, str) or not isinstance(score, int):
+                    continue
+                if not isinstance(difficulty, str) or not isinstance(theme, str):
+                    continue
+                if score < 0:
+                    continue
+                sanitized_history.append(
+                    {
+                        "word": word[:30],
+                        "result": result[:20],
+                        "score": score,
+                        "difficulty": difficulty,
+                        "theme": theme,
+                    }
+                )
+        merged["round_history"] = sanitized_history[:20]
         return merged
 
     def save(self, stats):
