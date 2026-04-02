@@ -3,8 +3,8 @@ import random
 
 DIFFICULTY_RULES = {
     "easy": (0, 7),
-    "medium": (8, 10),
-    "hard": (11, 99),
+    "medium": (8, 9),
+    "hard": (10, 99),
 }
 
 DEFAULT_WORD_LIST = [

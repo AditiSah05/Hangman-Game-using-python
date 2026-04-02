@@ -4,6 +4,7 @@ import sys
 import threading
 
 from game_logic import HangmanState
+from stats_store import StatsStore
 
 # Try to import winsound for Windows
 try:
@@ -22,7 +23,9 @@ class HangmanGame:
         # Create gradient background effect
         self.root.configure(bg='#6B7FCC')
         
-        self.state = HangmanState(max_wrong=6)
+        self.state = HangmanState(max_wrong=6, difficulty='medium')
+        self.stats_store = StatsStore("stats.json")
+        self.stats = self.stats_store.load()
         
         # Pre-calculate hangman drawing coordinates
         self.hangman_parts = [
@@ -86,6 +89,28 @@ class HangmanGame:
         # Right side - Game info and letters
         right_frame = tk.Frame(container_inner, bg='white')
         right_frame.pack(side='right', fill='both', expand=True)
+
+        controls_frame = tk.Frame(right_frame, bg='white')
+        controls_frame.pack(fill='x', pady=(0, 10))
+
+        tk.Label(controls_frame, text="Difficulty:",
+                 font=('Arial', 11, 'bold'), bg='white', fg='#2C3E50').pack(side='left')
+
+        self.difficulty_var = tk.StringVar(value='Medium')
+        difficulty_menu = tk.OptionMenu(
+            controls_frame,
+            self.difficulty_var,
+            'Easy',
+            'Medium',
+            'Hard',
+            command=self.on_difficulty_change,
+        )
+        difficulty_menu.config(bg='white', fg='#2C3E50', relief='solid', bd=1, width=8)
+        difficulty_menu.pack(side='left', padx=(8, 18))
+
+        self.stats_label = tk.Label(controls_frame, text="",
+                                    font=('Arial', 10), bg='white', fg='#34495E')
+        self.stats_label.pack(side='left')
         
         # Word display
         self.word_label = tk.Label(right_frame, text="", 
@@ -93,6 +118,10 @@ class HangmanGame:
                                    bg='white', fg='#2C3E50',
                                    justify='center')
         self.word_label.pack(pady=(0, 20))
+
+        self.status_label = tk.Label(right_frame, text="Pick a letter to start!",
+                         font=('Arial', 11), bg='white', fg='#566573')
+        self.status_label.pack(pady=(0, 12))
         
         # Hint display
         self.hint_label = tk.Label(right_frame, text="", 
@@ -143,6 +172,30 @@ class HangmanGame:
         
         # Bind keyboard input
         self.root.bind('<Key>', self.on_key_press)
+
+    def on_difficulty_change(self, choice):
+        level = (choice or "Medium").strip().lower()
+        self.state.set_difficulty(level)
+        self.new_game()
+        self.status_label.config(text=f"Difficulty set to {choice}. Good luck!")
+
+    def update_stats_display(self):
+        played = self.stats['games_played']
+        wins = self.stats['wins']
+        best = self.stats['best_streak']
+        self.stats_label.config(text=f"Played: {played}  Wins: {wins}  Best Streak: {best}")
+
+    def record_game_result(self, won):
+        self.stats['games_played'] += 1
+        if won:
+            self.stats['wins'] += 1
+            self.stats['current_streak'] += 1
+            self.stats['best_streak'] = max(self.stats['best_streak'], self.stats['current_streak'])
+        else:
+            self.stats['losses'] += 1
+            self.stats['current_streak'] = 0
+        self.stats_store.save(self.stats)
+        self.update_stats_display()
     
     def on_key_press(self, event):
         """Handle keyboard input"""
@@ -189,6 +242,8 @@ class HangmanGame:
         self.hint_label.config(text=f"Hint: {self.state.hint}")
         self.counter_label.config(text=f"Incorrect: {self.state.wrong_guesses}/{self.state.max_wrong}")
         self.guessed_label.config(text="Guessed: -")
+        self.status_label.config(text="Pick a letter to start!")
+        self.update_stats_display()
     
     def guess_letter(self, letter):
         result = self.state.guess(letter)
@@ -204,17 +259,21 @@ class HangmanGame:
             self.play_sound_async('wrong')
             self.draw_hangman(self.state.wrong_guesses)
             self.counter_label.config(text=f"Incorrect: {self.state.wrong_guesses}/{self.state.max_wrong}")
-        else:
+            self.status_label.config(text=f"Nope, '{letter}' is not in the word.")
+        elif result == 'correct':
             self.play_sound_async('correct')
+            self.status_label.config(text=f"Nice! '{letter}' is in the word.")
         
         self.update_word_display()
         guessed_text = ' '.join(sorted(self.state.guessed_letters))
         self.guessed_label.config(text=f"Guessed: {guessed_text}")
 
         if result == 'lost':
+            self.status_label.config(text="Out of attempts. Better luck next round.")
             self.game_over(False)
             return
         if result == 'won':
+            self.status_label.config(text="Great job, you solved it!")
             self.game_over(True)
             return
     
@@ -224,6 +283,7 @@ class HangmanGame:
     
     def game_over(self, won):
         self.state.game_active = False
+        self.record_game_result(won)
         
         # Disable all buttons at once
         for btn in self.letter_buttons.values():
