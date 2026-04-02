@@ -16,7 +16,18 @@ const DEFAULT_DOC = {
     Player: {
       saved: 0,
       best: 0,
+      games: 0,
+      wins: 0,
+      totalMisses: 0,
+      bestTimerStreak: 0,
+      currentTimerStreak: 0,
       timerEnabled: false,
+      timerSeconds: TURN_SECONDS,
+      hintsPerRound: 2,
+      soundEnabled: true,
+      reducedMotion: false,
+      contrastSafe: false,
+      avatarColor: "#2c3e50",
       customWords: [],
     },
   },
@@ -36,6 +47,13 @@ const state = {
   secondsLeft: TURN_SECONDS,
   timerId: null,
   hintsLeft: 2,
+  timerSeconds: TURN_SECONDS,
+  reducedMotion: false,
+  soundEnabled: true,
+  contrastSafe: false,
+  avatarColor: "#2c3e50",
+  particles: [],
+  animTime: 0,
 };
 
 const els = {
@@ -53,11 +71,27 @@ const els = {
   timerToggle: document.getElementById("timerToggle"),
   profileSelect: document.getElementById("profileSelect"),
   addProfileBtn: document.getElementById("addProfileBtn"),
+  renameProfileBtn: document.getElementById("renameProfileBtn"),
+  deleteProfileBtn: document.getElementById("deleteProfileBtn"),
+  avatarColorInput: document.getElementById("avatarColorInput"),
   importPackBtn: document.getElementById("importPackBtn"),
   exportPackBtn: document.getElementById("exportPackBtn"),
+  settingsBtn: document.getElementById("settingsBtn"),
   importPackInput: document.getElementById("importPackInput"),
   activeProfileBadge: document.getElementById("activeProfileBadge"),
   progressFill: document.getElementById("progressFill"),
+  winRateValue: document.getElementById("winRateValue"),
+  avgMissesValue: document.getElementById("avgMissesValue"),
+  bestTimerStreakValue: document.getElementById("bestTimerStreakValue"),
+  settingsDrawer: document.getElementById("settingsDrawer"),
+  closeSettingsBtn: document.getElementById("closeSettingsBtn"),
+  saveSettingsBtn: document.getElementById("saveSettingsBtn"),
+  drawerBackdrop: document.getElementById("drawerBackdrop"),
+  timerSecondsInput: document.getElementById("timerSecondsInput"),
+  hintsPerRoundInput: document.getElementById("hintsPerRoundInput"),
+  soundToggle: document.getElementById("soundToggle"),
+  reducedMotionToggle: document.getElementById("reducedMotionToggle"),
+  contrastToggle: document.getElementById("contrastToggle"),
   toastStack: document.getElementById("toastStack"),
   scene: document.getElementById("scene"),
 };
@@ -75,11 +109,88 @@ function showToast(text) {
 }
 
 function pulseKey(letter, className) {
+  if (state.reducedMotion) return;
   const btn = [...els.keyboard.querySelectorAll("button")].find((b) => b.textContent === letter);
   if (!btn) return;
   btn.classList.remove("pop-correct", "pop-wrong");
   btn.classList.add(className);
   setTimeout(() => btn.classList.remove(className), 260);
+}
+
+function playTone(freq, ms) {
+  if (!state.soundEnabled) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "triangle";
+    osc.frequency.value = freq;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    gain.gain.value = 0.05;
+    osc.start();
+    setTimeout(() => {
+      osc.stop();
+      ctx.close();
+    }, ms);
+  } catch (_) {
+    // Ignore unsupported audio.
+  }
+}
+
+function openSettingsDrawer() {
+  const profile = activeProfile();
+  els.timerSecondsInput.value = String(profile.timerSeconds);
+  els.hintsPerRoundInput.value = String(profile.hintsPerRound);
+  els.soundToggle.checked = profile.soundEnabled;
+  els.reducedMotionToggle.checked = profile.reducedMotion;
+  els.contrastToggle.checked = profile.contrastSafe;
+  els.settingsDrawer.classList.add("open");
+  els.settingsDrawer.setAttribute("aria-hidden", "false");
+  els.drawerBackdrop.hidden = false;
+}
+
+function closeSettingsDrawer() {
+  els.settingsDrawer.classList.remove("open");
+  els.settingsDrawer.setAttribute("aria-hidden", "true");
+  els.drawerBackdrop.hidden = true;
+}
+
+function saveSettingsFromDrawer() {
+  const profile = activeProfile();
+  profile.timerSeconds = Math.max(5, Math.min(60, Number(els.timerSecondsInput.value) || TURN_SECONDS));
+  profile.hintsPerRound = Math.max(0, Math.min(5, Number(els.hintsPerRoundInput.value) || 2));
+  profile.soundEnabled = els.soundToggle.checked;
+  profile.reducedMotion = els.reducedMotionToggle.checked;
+  profile.contrastSafe = els.contrastToggle.checked;
+
+  state.timerSeconds = profile.timerSeconds;
+  state.soundEnabled = profile.soundEnabled;
+  state.reducedMotion = profile.reducedMotion;
+  state.contrastSafe = profile.contrastSafe;
+
+  document.body.classList.toggle("contrast-safe", state.contrastSafe);
+  saveStats();
+  closeSettingsDrawer();
+  showToast("Settings saved.");
+  newGame();
+}
+
+function spawnPopParticles() {
+  if (state.reducedMotion) return;
+  const anchors = [[270, 148], [292, 136], [318, 142], [338, 156], [282, 168], [322, 170]];
+  const idx = Math.max(0, Math.min(anchors.length - 1, MAX_WRONG - state.wrong));
+  const [x, y] = anchors[idx];
+  for (let i = 0; i < 14; i += 1) {
+    const angle = (Math.PI * 2 * i) / 14;
+    state.particles.push({
+      x,
+      y,
+      vx: Math.cos(angle) * (1 + Math.random() * 1.8),
+      vy: Math.sin(angle) * (1 + Math.random() * 1.8),
+      life: 24,
+    });
+  }
 }
 
 function sanitizeCustomWords(list) {
@@ -112,7 +223,20 @@ function normalizeDoc(raw) {
       profiles[safeName] = {
         saved: Math.max(Number(profile.saved) || 0, 0),
         best: Math.max(Number(profile.best) || 0, 0),
+        games: Math.max(Number(profile.games) || 0, 0),
+        wins: Math.max(Number(profile.wins) || 0, 0),
+        totalMisses: Math.max(Number(profile.totalMisses) || 0, 0),
+        bestTimerStreak: Math.max(Number(profile.bestTimerStreak) || 0, 0),
+        currentTimerStreak: Math.max(Number(profile.currentTimerStreak) || 0, 0),
         timerEnabled: Boolean(profile.timerEnabled),
+        timerSeconds: Math.max(5, Math.min(60, Number(profile.timerSeconds) || TURN_SECONDS)),
+        hintsPerRound: Math.max(0, Math.min(5, Number(profile.hintsPerRound) || 2)),
+        soundEnabled: profile.soundEnabled !== false,
+        reducedMotion: Boolean(profile.reducedMotion),
+        contrastSafe: Boolean(profile.contrastSafe),
+        avatarColor: /^#[0-9A-Fa-f]{6}$/.test(String(profile.avatarColor || ""))
+          ? String(profile.avatarColor)
+          : "#2c3e50",
         customWords: sanitizeCustomWords(profile.customWords),
       };
     });
@@ -122,7 +246,18 @@ function normalizeDoc(raw) {
     profiles[active] = {
       saved: Math.max(Number(raw.games_played) || 0, 0),
       best: Math.max(Number(raw.best_streak) || 0, 0),
+      games: Math.max(Number(raw.games_played) || 0, 0),
+      wins: Math.max(Number(raw.wins) || 0, 0),
+      totalMisses: 0,
+      bestTimerStreak: 0,
+      currentTimerStreak: 0,
       timerEnabled: Boolean(raw.timer_enabled),
+      timerSeconds: Math.max(5, Math.min(60, Number(raw.turn_seconds) || TURN_SECONDS)),
+      hintsPerRound: Math.max(0, Math.min(5, Number(raw.hints_per_round) || 2)),
+      soundEnabled: raw.sound_enabled !== false,
+      reducedMotion: false,
+      contrastSafe: false,
+      avatarColor: "#2c3e50",
       customWords: sanitizeCustomWords(raw.custom_words || []),
     };
   }
@@ -181,8 +316,12 @@ async function saveStats() {
     ...statsDoc,
     player_name: activeProfileName(),
     timer_enabled: profile.timerEnabled,
+    turn_seconds: profile.timerSeconds,
+    hints_per_round: profile.hintsPerRound,
+    sound_enabled: profile.soundEnabled,
     custom_words: profile.customWords.map((row) => ({ word: row.word, hint: row.hint })),
-    games_played: profile.saved,
+    games_played: profile.games,
+    wins: profile.wins,
     best_streak: profile.best,
   };
 
@@ -259,17 +398,19 @@ function drawScene() {
   const balloonsLeft = Math.max(MAX_WRONG - state.wrong, 0);
 
   anchors.forEach(([bx, by], idx) => {
+    const wobble = state.reducedMotion ? 0 : Math.sin(state.animTime / 520 + idx) * 4;
+    const balloonY = by - 2 + wobble;
     if (idx < balloonsLeft) {
       ctx.strokeStyle = "#111";
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(301, 182);
-      ctx.lineTo(bx, by + 12);
+      ctx.lineTo(bx, by + 12 + wobble);
       ctx.stroke();
 
       ctx.fillStyle = balloonColors[idx];
       ctx.beginPath();
-      ctx.ellipse(bx, by - 2, 14, 16, 0, 0, Math.PI * 2);
+      ctx.ellipse(bx, balloonY, 14, 16, 0, 0, Math.PI * 2);
       ctx.fill();
     } else {
       ctx.strokeStyle = "#BDBDBD";
@@ -279,6 +420,18 @@ function drawScene() {
       ctx.moveTo(bx + 8, by - 8); ctx.lineTo(bx - 8, by + 8);
       ctx.stroke();
     }
+  });
+
+  state.particles = state.particles.filter((p) => p.life > 0);
+  state.particles.forEach((p) => {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.06;
+    p.life -= 1;
+    ctx.fillStyle = `rgba(176, 74, 90, ${Math.max(p.life / 24, 0)})`;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 2.2, 0, Math.PI * 2);
+    ctx.fill();
   });
 }
 
@@ -309,7 +462,7 @@ function startTimer() {
     els.timerText.textContent = "Timer: Off";
     return;
   }
-  state.secondsLeft = TURN_SECONDS;
+  state.secondsLeft = state.timerSeconds;
   els.timerText.textContent = `Timer: ${state.secondsLeft}s`;
   state.timerId = setInterval(() => {
     state.secondsLeft -= 1;
@@ -333,17 +486,29 @@ function endGame(won) {
   stopTimer();
   [...els.keyboard.querySelectorAll("button")].forEach(btn => { btn.disabled = true; });
   const profile = activeProfile();
+  profile.games += 1;
+  profile.totalMisses += state.wrong;
   if (won) {
     state.saved += 1;
     state.best = Math.max(state.best, state.saved);
     profile.saved = state.saved;
     profile.best = state.best;
+    profile.wins += 1;
+    if (state.timerEnabled) {
+      profile.currentTimerStreak += 1;
+      profile.bestTimerStreak = Math.max(profile.bestTimerStreak, profile.currentTimerStreak);
+    }
+    playTone(830, 120);
     els.statusText.textContent = "Great job. You saved the character.";
     showToast("Round won. Nice save.");
     setTimeout(() => alert(`You won. Word: ${state.word}`), 50);
   } else {
     state.saved = 0;
     profile.saved = 0;
+    if (state.timerEnabled) {
+      profile.currentTimerStreak = 0;
+    }
+    playTone(260, 200);
     els.statusText.textContent = "Game over. Balloons are gone.";
     showToast("Round lost. Try another word.");
     setTimeout(() => alert(`You lost. Word: ${state.word}`), 50);
@@ -359,9 +524,12 @@ function handleGuess(letter) {
     state.wrong += 1;
     els.statusText.textContent = `Nope, ${letter} is not in the word.`;
     pulseKey(letter, "pop-wrong");
+    spawnPopParticles();
+    playTone(280, 90);
   } else {
     els.statusText.textContent = `Nice, ${letter} is in the word.`;
     pulseKey(letter, "pop-correct");
+    playTone(720, 70);
   }
   updateUI();
   if (state.wrong >= MAX_WRONG) return endGame(false);
@@ -379,6 +547,8 @@ function useHint() {
   state.wrong += 1;
   els.statusText.textContent = `Hint revealed ${letter}, but cost 1 miss.`;
   pulseKey(letter, "pop-correct");
+  spawnPopParticles();
+  playTone(420, 80);
   showToast(`Hint used. Revealed ${letter}.`);
   updateUI();
   if (state.wrong >= MAX_WRONG) return endGame(false);
@@ -400,6 +570,15 @@ function updateUI() {
   els.categoryLabel.textContent = state.category;
   els.savedCount.textContent = String(state.saved);
   els.bestCount.textContent = String(state.best);
+  const profile = activeProfile();
+  const winRate = profile.games ? Math.round((profile.wins / profile.games) * 100) : 0;
+  const avgMisses = profile.games ? (profile.totalMisses / profile.games).toFixed(1) : "0.0";
+  els.winRateValue.textContent = `${winRate}%`;
+  els.avgMissesValue.textContent = avgMisses;
+  els.bestTimerStreakValue.textContent = String(profile.bestTimerStreak || 0);
+  els.activeProfileBadge.textContent = `Active: ${activeProfileName()}`;
+  els.activeProfileBadge.style.borderColor = profile.avatarColor;
+  els.activeProfileBadge.style.boxShadow = `inset 0 0 0 2px ${profile.avatarColor}33`;
   els.wordMask.textContent = maskWord();
   els.hintText.textContent = `Hint: ${state.hint}`;
   els.missesText.textContent = `Misses: ${state.wrong}/${MAX_WRONG}`;
@@ -414,12 +593,16 @@ function updateUI() {
     const letter = btn.textContent;
     btn.disabled = state.guessed.has(letter) || state.wrong >= MAX_WRONG || isWon();
   });
-
-  drawScene();
 }
 
 function newGame() {
   stopTimer();
+  const profile = activeProfile();
+  state.timerSeconds = profile.timerSeconds;
+  state.soundEnabled = profile.soundEnabled;
+  state.reducedMotion = profile.reducedMotion;
+  state.contrastSafe = profile.contrastSafe;
+  document.body.classList.toggle("contrast-safe", state.contrastSafe);
   const pool = getWordPool();
   const pick = pool[Math.floor(Math.random() * pool.length)];
   state.word = pick.word;
@@ -427,7 +610,7 @@ function newGame() {
   state.category = pick.category;
   state.guessed = new Set();
   state.wrong = 0;
-  state.hintsLeft = 2;
+  state.hintsLeft = profile.hintsPerRound;
   els.statusText.textContent = "Pick a letter to start.";
   updateUI();
   startTimer();
@@ -441,7 +624,13 @@ function switchProfile(name) {
   state.saved = profile.saved;
   state.best = profile.best;
   state.timerEnabled = profile.timerEnabled;
+  state.timerSeconds = profile.timerSeconds;
+  state.soundEnabled = profile.soundEnabled;
+  state.reducedMotion = profile.reducedMotion;
+  state.contrastSafe = profile.contrastSafe;
+  state.avatarColor = profile.avatarColor;
   els.timerToggle.checked = profile.timerEnabled;
+  els.avatarColorInput.value = profile.avatarColor;
   rebuildProfileSelect();
   saveStats();
   showToast(`Switched to ${safe}.`);
@@ -454,10 +643,69 @@ function addProfile() {
   const name = input.trim().slice(0, 20);
   if (!name) return;
   if (!statsDoc.profiles[name]) {
-    statsDoc.profiles[name] = { saved: 0, best: 0, timerEnabled: false, customWords: [] };
+    statsDoc.profiles[name] = {
+      saved: 0,
+      best: 0,
+      games: 0,
+      wins: 0,
+      totalMisses: 0,
+      bestTimerStreak: 0,
+      currentTimerStreak: 0,
+      timerEnabled: false,
+      timerSeconds: TURN_SECONDS,
+      hintsPerRound: 2,
+      soundEnabled: true,
+      reducedMotion: false,
+      contrastSafe: false,
+      avatarColor: "#2c3e50",
+      customWords: [],
+    };
   }
   showToast(`Profile ${name} ready.`);
   switchProfile(name);
+}
+
+function renameProfile() {
+  const current = activeProfileName();
+  const input = prompt("Rename profile:", current);
+  if (!input) return;
+  const next = input.trim().slice(0, 20);
+  if (!next || next === current) return;
+  if (statsDoc.profiles[next]) {
+    alert("A profile with that name already exists.");
+    return;
+  }
+  statsDoc.profiles[next] = statsDoc.profiles[current];
+  delete statsDoc.profiles[current];
+  statsDoc.active_profile = next;
+  rebuildProfileSelect();
+  saveStats();
+  showToast(`Renamed profile to ${next}.`);
+  newGame();
+}
+
+function deleteProfile() {
+  const current = activeProfileName();
+  const names = Object.keys(statsDoc.profiles);
+  if (names.length <= 1) {
+    alert("At least one profile must remain.");
+    return;
+  }
+  const ok = confirm(`Delete profile ${current}? This cannot be undone.`);
+  if (!ok) return;
+  delete statsDoc.profiles[current];
+  const next = Object.keys(statsDoc.profiles).sort((a, b) => a.localeCompare(b))[0];
+  statsDoc.active_profile = next;
+  showToast(`Deleted ${current}.`);
+  switchProfile(next);
+}
+
+function updateAvatarColor(value) {
+  if (!/^#[0-9A-Fa-f]{6}$/.test(value)) return;
+  activeProfile().avatarColor = value;
+  state.avatarColor = value;
+  saveStats();
+  updateUI();
 }
 
 function exportPack() {
@@ -501,7 +749,14 @@ async function init() {
   state.saved = profile.saved;
   state.best = profile.best;
   state.timerEnabled = profile.timerEnabled;
+  state.timerSeconds = profile.timerSeconds;
+  state.soundEnabled = profile.soundEnabled;
+  state.reducedMotion = profile.reducedMotion;
+  state.contrastSafe = profile.contrastSafe;
+  state.avatarColor = profile.avatarColor;
   els.timerToggle.checked = profile.timerEnabled;
+  els.avatarColorInput.value = profile.avatarColor;
+  document.body.classList.toggle("contrast-safe", state.contrastSafe);
 
   buildKeyboard();
   els.newBtn.addEventListener("click", newGame);
@@ -518,6 +773,9 @@ async function init() {
   });
 
   els.addProfileBtn.addEventListener("click", addProfile);
+  els.renameProfileBtn.addEventListener("click", renameProfile);
+  els.deleteProfileBtn.addEventListener("click", deleteProfile);
+  els.avatarColorInput.addEventListener("change", (e) => updateAvatarColor(e.target.value));
   els.exportPackBtn.addEventListener("click", exportPack);
   els.importPackBtn.addEventListener("click", () => els.importPackInput.click());
   els.importPackInput.addEventListener("change", (e) => {
@@ -525,12 +783,24 @@ async function init() {
     e.target.value = "";
   });
 
+  els.settingsBtn.addEventListener("click", openSettingsDrawer);
+  els.closeSettingsBtn.addEventListener("click", closeSettingsDrawer);
+  els.drawerBackdrop.addEventListener("click", closeSettingsDrawer);
+  els.saveSettingsBtn.addEventListener("click", saveSettingsFromDrawer);
+
   window.addEventListener("keydown", (e) => {
     const key = e.key.toUpperCase();
     if (/^[A-Z]$/.test(key)) {
       handleGuess(key);
     }
   });
+
+  function renderLoop(ts) {
+    state.animTime = ts;
+    drawScene();
+    requestAnimationFrame(renderLoop);
+  }
+  requestAnimationFrame(renderLoop);
 
   newGame();
 }

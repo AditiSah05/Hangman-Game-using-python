@@ -8,6 +8,14 @@
   --accent: #b04a5a;
 }
 
+body.contrast-safe {
+  --bg: #f7f7f7;
+  --ink: #000000;
+  --muted: #222222;
+  --tile: #ffffff;
+  --tile-disabled: #d9d9d9;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -80,6 +88,21 @@ body {
   color: #fff;
   background: #2c3e50;
   cursor: pointer;
+  border-radius: 8px;
+}
+
+.avatar-color-label {
+  font-size: 14px;
+  color: #666;
+}
+
+#avatarColorInput {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #bfbfbf;
+  border-radius: 50%;
+  background: transparent;
+  padding: 0;
 }
 
 #importPackBtn {
@@ -88,6 +111,37 @@ body {
 
 #exportPackBtn {
   background: #7d6608;
+}
+
+#settingsBtn {
+  background: #515a5a;
+}
+
+.quick-stats {
+  display: flex;
+  gap: 10px;
+  margin: 10px 0 6px;
+  flex-wrap: wrap;
+}
+
+.stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  border: 1px solid #cecece;
+  background: #fafafa;
+  padding: 6px 12px;
+}
+
+.chip-label {
+  color: #656565;
+  font-size: 13px;
+}
+
+.chip-value {
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .board {
@@ -198,6 +252,13 @@ body {
   transform: translateY(-1px);
 }
 
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 3px solid #1d70b8;
+  outline-offset: 2px;
+}
+
 #hintBtn {
   background: var(--accent);
 }
@@ -246,6 +307,87 @@ body {
   display: grid;
   gap: 8px;
   z-index: 999;
+}
+
+.settings-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(360px, 92vw);
+  height: 100vh;
+  background: #ffffff;
+  border-left: 1px solid #d8d8d8;
+  box-shadow: -6px 0 24px rgba(0, 0, 0, 0.18);
+  transform: translateX(105%);
+  transition: transform 220ms ease;
+  z-index: 1000;
+}
+
+.settings-drawer.open {
+  transform: translateX(0);
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #ececec;
+  padding: 12px 14px;
+}
+
+.settings-header h3 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.settings-header button {
+  border: 0;
+  background: #e9e9e9;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.settings-body {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.settings-body label {
+  font-size: 14px;
+  color: #575757;
+}
+
+.settings-body input[type="number"] {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #b9b9b9;
+  border-radius: 6px;
+}
+
+.setting-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.save-settings-btn {
+  margin-top: 8px;
+  border: 0;
+  border-radius: 8px;
+  background: #2c3e50;
+  color: #fff;
+  padding: 10px 12px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.2);
+  z-index: 900;
 }
 
 .toast {

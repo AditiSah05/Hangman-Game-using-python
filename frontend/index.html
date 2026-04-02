@@ -22,12 +22,23 @@
 
     <section class="profile-row">
       <label for="profileSelect">Profile</label>
-      <select id="profileSelect"></select>
-      <button id="addProfileBtn">+ Profile</button>
+      <select id="profileSelect" aria-label="Choose player profile"></select>
+      <button id="addProfileBtn" aria-label="Create profile">+ Profile</button>
+      <button id="renameProfileBtn" aria-label="Rename profile">Rename</button>
+      <button id="deleteProfileBtn" aria-label="Delete profile">Delete</button>
+      <label for="avatarColorInput" class="avatar-color-label">Avatar</label>
+      <input id="avatarColorInput" type="color" value="#2c3e50" aria-label="Profile avatar color" />
       <span id="activeProfileBadge" class="profile-badge">Active: Player</span>
-      <button id="importPackBtn">Import Pack</button>
-      <button id="exportPackBtn">Export Pack</button>
+      <button id="importPackBtn" aria-label="Import custom word pack">Import Pack</button>
+      <button id="exportPackBtn" aria-label="Export custom word pack">Export Pack</button>
+      <button id="settingsBtn" aria-label="Open settings">Settings</button>
       <input id="importPackInput" type="file" accept="application/json" hidden />
+    </section>
+
+    <section class="quick-stats" aria-label="Quick performance stats">
+      <div class="stat-chip"><span class="chip-label">Win Rate</span><span id="winRateValue" class="chip-value">0%</span></div>
+      <div class="stat-chip"><span class="chip-label">Avg Misses</span><span id="avgMissesValue" class="chip-value">0.0</span></div>
+      <div class="stat-chip"><span class="chip-label">Best Timer Streak</span><span id="bestTimerStreakValue" class="chip-value">0</span></div>
     </section>
 
     <section class="board">
@@ -51,10 +62,10 @@
         <div id="keyboard" class="keyboard"></div>
 
         <div class="controls">
-          <button id="newBtn">New Game</button>
-          <button id="hintBtn">Hint (2)</button>
+          <button id="newBtn" aria-label="Start a new game">New Game</button>
+          <button id="hintBtn" aria-label="Use hint">Hint (2)</button>
           <label class="timer-toggle">
-            <input id="timerToggle" type="checkbox" />
+            <input id="timerToggle" type="checkbox" aria-label="Enable timer" />
             Timer
           </label>
         </div>
@@ -65,6 +76,28 @@
       </div>
     </section>
   </main>
+
+  <aside id="settingsDrawer" class="settings-drawer" aria-label="Game settings" aria-hidden="true">
+    <div class="settings-header">
+      <h3>Settings</h3>
+      <button id="closeSettingsBtn" aria-label="Close settings">X</button>
+    </div>
+    <div class="settings-body">
+      <label for="timerSecondsInput">Timer Seconds</label>
+      <input id="timerSecondsInput" type="number" min="5" max="60" value="15" />
+
+      <label for="hintsPerRoundInput">Hints Per Round</label>
+      <input id="hintsPerRoundInput" type="number" min="0" max="5" value="2" />
+
+      <label class="setting-toggle"><input id="soundToggle" type="checkbox" checked /> Sound</label>
+      <label class="setting-toggle"><input id="reducedMotionToggle" type="checkbox" /> Reduced Motion</label>
+      <label class="setting-toggle"><input id="contrastToggle" type="checkbox" /> Contrast Safe Mode</label>
+
+      <button id="saveSettingsBtn" class="save-settings-btn">Save Settings</button>
+    </div>
+  </aside>
+
+  <div id="drawerBackdrop" class="drawer-backdrop" hidden></div>
 
   <div id="toastStack" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
 
