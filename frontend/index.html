@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hangman Frontend</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar"></header>
+
+  <main class="app">
+    <section class="hud">
+      <div class="hud-left">
+        <h2 id="categoryLabel">Everyday Objects</h2>
+      </div>
+      <div class="hud-right">
+        <div>Saved: <span id="savedCount">0</span></div>
+        <div>Best: <span id="bestCount">0</span></div>
+      </div>
+    </section>
+
+    <section class="board">
+      <div class="left-col">
+        <h1 id="wordMask">_ _ _ _ _</h1>
+        <p id="hintText">Hint: ...</p>
+        <p id="statusText">Pick a letter to start.</p>
+
+        <div class="meta-row">
+          <span id="missesText">Misses: 0/6</span>
+          <span id="timerText">Timer: Off</span>
+        </div>
+
+        <div id="keyboard" class="keyboard"></div>
+
+        <div class="controls">
+          <button id="newBtn">New Game</button>
+          <button id="hintBtn">Hint (2)</button>
+          <label class="timer-toggle">
+            <input id="timerToggle" type="checkbox" />
+            Timer
+          </label>
+        </div>
+      </div>
+
+      <div class="right-col">
+        <canvas id="scene" width="360" height="450" aria-label="Hangman drawing"></canvas>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

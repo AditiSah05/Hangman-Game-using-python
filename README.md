@@ -54,6 +54,27 @@ A classic word-guessing game implemented in Python using Tkinter for the graphic
 
 4. The game window will open. Start playing by clicking letter buttons or using keyboard input.
 
+## Browser Frontend
+
+A web frontend is available in the `frontend` folder.
+
+Files:
+
+- `frontend/index.html`
+- `frontend/style.css`
+- `frontend/script.js`
+
+Run options:
+
+1. Open `frontend/index.html` directly in your browser.
+2. Or serve with Python for a local site:
+
+```bash
+python -m http.server 5500
+```
+
+Then open `http://localhost:5500/frontend/`.
+
 ## Project Structure
 
 - `app.py`: Tkinter user interface and audio feedback.

@@ -18,12 +18,11 @@ class HangmanGame:
     def __init__(self, root):
         self.root = root
         self.root.title("Hangman Game")
-        self.root.geometry("1180x820")
-        self.root.minsize(1080, 760)
+        self.root.geometry("1100x620")
+        self.root.minsize(1000, 560)
         self.root.resizable(True, True)
         
-        # App background approximates a modern web card layout.
-        self.root.configure(bg='#E9EEF8')
+        self.root.configure(bg='#ECECEC')
         
         self.stats_store = StatsStore("stats.json")
         self.stats = self.stats_store.load()
@@ -116,133 +115,126 @@ class HangmanGame:
             pass
     
     def setup_ui(self):
-        container = tk.Frame(self.root, bg='white', bd=0)
-        container.pack(expand=True, fill='both', padx=18, pady=18)
+        top_bar = tk.Frame(self.root, bg='#16233A', height=16)
+        top_bar.pack(fill='x', side='top')
 
-        top_frame = tk.Frame(container, bg='white')
-        top_frame.pack(fill='x', pady=(0, 10))
+        container = tk.Frame(self.root, bg='#ECECEC')
+        container.pack(expand=True, fill='both', padx=18, pady=12)
 
-        title_label = tk.Label(top_frame, text="HANGMAN", font=('Arial', 22, 'bold'), bg='white', fg='#1E2A4A')
-        title_label.pack(side='left')
+        top_info = tk.Frame(container, bg='#ECECEC')
+        top_info.pack(fill='x', pady=(0, 6))
 
-        self.status_label = tk.Label(top_frame, text="Pick a letter to start!",
-                                     font=('Arial', 11), bg='white', fg='#566573')
-        self.status_label.pack(side='right')
+        self.category_label = tk.Label(top_info, text="Everyday Objects",
+                                       font=('Comic Sans MS', 18, 'bold'),
+                                       bg='#ECECEC', fg='#262626')
+        self.category_label.pack(side='top')
 
-        controls_frame = tk.Frame(container, bg='white')
-        controls_frame.pack(fill='x', pady=(0, 10))
+        self.stats_label = tk.Label(top_info, text="Saved: 0\nBest: 0",
+                                    font=('Comic Sans MS', 12, 'bold'),
+                                    justify='right', bg='#ECECEC', fg='#262626')
+        self.stats_label.place(relx=1.0, x=-4, y=0, anchor='ne')
 
-        tk.Label(controls_frame, text="Name", font=('Arial', 10, 'bold'), bg='white', fg='#2C3E50').pack(side='left')
-        self.name_var = tk.StringVar(value=self.player_name)
-        self.name_entry = tk.Entry(controls_frame, textvariable=self.name_var, width=12, font=('Arial', 10), relief='solid', bd=1)
-        self.name_entry.pack(side='left', padx=(6, 6))
+        main_frame = tk.Frame(container, bg='#ECECEC')
+        main_frame.pack(fill='both', expand=True)
 
-        save_name_btn = tk.Button(controls_frame, text="Save", font=('Arial', 9, 'bold'), bg='#2F477A', fg='white',
-                                  relief='flat', cursor='hand2', command=self.on_player_name_save)
-        save_name_btn.pack(side='left', padx=(0, 10))
+        left_panel = tk.Frame(main_frame, bg='#ECECEC')
+        left_panel.pack(side='left', fill='both', expand=True, padx=(0, 18))
 
-        tk.Label(controls_frame, text="Difficulty", font=('Arial', 10, 'bold'), bg='white', fg='#2C3E50').pack(side='left')
-        self.difficulty_var = tk.StringVar(value=self.state.difficulty.title())
-        difficulty_menu = tk.OptionMenu(controls_frame, self.difficulty_var, 'Easy', 'Medium', 'Hard', command=self.on_difficulty_change)
-        difficulty_menu.config(bg='white', fg='#2C3E50', relief='solid', bd=1, width=7)
-        difficulty_menu.pack(side='left', padx=(6, 10))
-
-        tk.Label(controls_frame, text="Theme", font=('Arial', 10, 'bold'), bg='white', fg='#2C3E50').pack(side='left')
-        self.theme_var = tk.StringVar(value=self.state.theme.title())
-        theme_menu = tk.OptionMenu(controls_frame, self.theme_var, 'All', 'Animals', 'Tech', 'Nature', 'Food', 'Custom', command=self.on_theme_change)
-        theme_menu.config(bg='white', fg='#2C3E50', relief='solid', bd=1, width=8)
-        theme_menu.pack(side='left', padx=(6, 10))
-
-        self.timer_var = tk.BooleanVar(value=bool(self.stats.get('timer_enabled', False)))
-        timer_toggle = tk.Checkbutton(controls_frame, text="Timer", variable=self.timer_var, command=self.on_timer_toggle,
-                                      bg='white', fg='#2C3E50', font=('Arial', 10, 'bold'), activebackground='white')
-        timer_toggle.pack(side='left', padx=(0, 8))
-
-        custom_pack_btn = tk.Button(controls_frame, text="Custom Pack", font=('Arial', 9, 'bold'), bg='#1B4F72', fg='white',
-                                    relief='flat', cursor='hand2', command=self.open_custom_pack_window)
-        custom_pack_btn.pack(side='left', padx=(0, 6))
-
-        settings_btn = tk.Button(controls_frame, text="Settings", font=('Arial', 9, 'bold'), bg='#515A5A', fg='white',
-                                 relief='flat', cursor='hand2', command=self.open_settings_window)
-        settings_btn.pack(side='left')
-
-        content_frame = tk.Frame(container, bg='white')
-        content_frame.pack(fill='both', expand=True)
-
-        left_frame = tk.Frame(content_frame, bg='white')
-        left_frame.pack(side='left', fill='y', padx=(0, 18))
-
-        self.canvas = tk.Canvas(left_frame, width=370, height=430, bg='white', highlightthickness=0)
-        self.canvas.pack()
-
-        right_frame = tk.Frame(content_frame, bg='white')
-        right_frame.pack(side='left', fill='both', expand=True)
-
-        self.word_label = tk.Label(right_frame, text="", font=('Arial', 34, 'bold'), bg='white', fg='#1E2A4A', justify='center')
+        self.word_label = tk.Label(left_panel, text="", font=('Comic Sans MS', 38, 'bold'),
+                                   bg='#ECECEC', fg='#111111', justify='center')
         self.word_label.pack(pady=(4, 10))
 
-        self.hint_label = tk.Label(right_frame, text="", font=('Arial', 11), bg='white', fg='#555', wraplength=620, justify='left')
-        self.hint_label.pack(anchor='w', pady=(0, 8))
+        self.hint_label = tk.Label(left_panel, text="", font=('Comic Sans MS', 11),
+                                   bg='#ECECEC', fg='#555555', wraplength=560, justify='left')
+        self.hint_label.pack(anchor='w', pady=(0, 6))
 
-        status_row = tk.Frame(right_frame, bg='white')
-        status_row.pack(fill='x', pady=(0, 8))
+        utility_row = tk.Frame(left_panel, bg='#ECECEC')
+        utility_row.pack(anchor='w', pady=(0, 8))
 
-        self.counter_label = tk.Label(status_row, text="Incorrect: 0/6", font=('Arial', 12, 'bold'), bg='white', fg='#D35400')
+        self.counter_label = tk.Label(utility_row, text="Misses: 0/6", font=('Comic Sans MS', 11, 'bold'), bg='#ECECEC', fg='#A94442')
         self.counter_label.pack(side='left')
 
-        self.timer_label = tk.Label(status_row, text="Timer: Off", font=('Arial', 11, 'bold'), bg='white', fg='#C0392B')
-        self.timer_label.pack(side='left', padx=(16, 0))
+        self.timer_label = tk.Label(utility_row, text="Timer: Off", font=('Comic Sans MS', 11, 'bold'), bg='#ECECEC', fg='#7D3C98')
+        self.timer_label.pack(side='left', padx=(14, 0))
 
-        self.guessed_label = tk.Label(right_frame, text="Guessed: -", font=('Arial', 11), bg='white', fg='#34495E', wraplength=620, justify='left')
-        self.guessed_label.pack(anchor='w', pady=(0, 10))
+        self.status_label = tk.Label(left_panel, text="Pick a letter to start!",
+                                     font=('Comic Sans MS', 10), bg='#ECECEC', fg='#555555')
+        self.status_label.pack(anchor='w', pady=(0, 8))
 
-        letters_frame = tk.Frame(right_frame, bg='white')
-        letters_frame.pack(anchor='w', pady=(0, 10))
+        letters_frame = tk.Frame(left_panel, bg='#ECECEC')
+        letters_frame.pack(anchor='w')
 
         self.letter_buttons = {}
         alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
         for i, letter in enumerate(alphabet):
-            btn = tk.Button(letters_frame, text=letter, width=4, height=1,
-                            font=('Arial', 12, 'bold'),
-                            bg='#5A74C9', fg='white',
-                            activebackground='#3F5FBF',
-                            relief='flat', cursor='hand2',
-                            command=lambda l=letter: self.guess_letter(l))
-            btn.grid(row=i // 9, column=i % 9, padx=3, pady=3)
+            btn = tk.Button(
+                letters_frame,
+                text=letter,
+                width=3,
+                height=1,
+                font=('Comic Sans MS', 20, 'bold'),
+                bg='#F6F6F6',
+                fg='#111111',
+                activebackground='#E5E5E5',
+                activeforeground='#111111',
+                relief='solid',
+                bd=2,
+                cursor='hand2',
+                command=lambda l=letter: self.guess_letter(l),
+            )
+            btn.grid(row=i // 6, column=i % 6, padx=4, pady=4)
             self.letter_buttons[letter] = btn
 
-        action_frame = tk.Frame(right_frame, bg='white')
-        action_frame.pack(anchor='w', pady=(0, 10))
+        bottom_row = tk.Frame(left_panel, bg='#ECECEC')
+        bottom_row.pack(anchor='w', pady=(10, 0))
 
-        self.hint_button = tk.Button(action_frame, text="Hint (2)", font=('Arial', 10, 'bold'),
-                                     bg='#D68910', fg='white', activebackground='#B9770E',
+        self.hint_button = tk.Button(bottom_row, text="Hint (2)", font=('Comic Sans MS', 10, 'bold'),
+                                     bg='#B04A5A', fg='white', activebackground='#9E3E4E',
                                      relief='flat', cursor='hand2', command=self.use_hint)
         self.hint_button.pack(side='left', padx=(0, 8))
 
-        self.restart_button = tk.Button(action_frame, text="Restart", font=('Arial', 10, 'bold'),
+        self.restart_button = tk.Button(bottom_row, text="Restart", font=('Comic Sans MS', 10, 'bold'),
                                         bg='#2C3E50', fg='white', activebackground='#1F2D3A',
                                         relief='flat', cursor='hand2', command=self.new_game)
         self.restart_button.pack(side='left', padx=(0, 8))
 
-        self.pause_button = tk.Button(action_frame, text="Pause", font=('Arial', 10, 'bold'),
+        self.pause_button = tk.Button(bottom_row, text="Pause", font=('Comic Sans MS', 10, 'bold'),
                                       bg='#7D6608', fg='white', activebackground='#6E2C00',
                                       relief='flat', cursor='hand2', command=self.toggle_pause)
-        self.pause_button.pack(side='left')
+        self.pause_button.pack(side='left', padx=(0, 8))
 
-        info_row = tk.Frame(right_frame, bg='white')
-        info_row.pack(fill='x', pady=(4, 0))
+        settings_button = tk.Button(bottom_row, text="Settings", font=('Comic Sans MS', 10, 'bold'),
+                                    bg='#515A5A', fg='white', activebackground='#3F4747',
+                                    relief='flat', cursor='hand2', command=self.open_settings_window)
+        settings_button.pack(side='left', padx=(0, 8))
 
-        self.stats_label = tk.Label(info_row, text="", font=('Arial', 10), bg='white', fg='#34495E', justify='left')
-        self.stats_label.pack(anchor='w')
+        custom_pack_btn = tk.Button(bottom_row, text="Custom Pack", font=('Comic Sans MS', 10, 'bold'),
+                                    bg='#1B4F72', fg='white', activebackground='#154360',
+                                    relief='flat', cursor='hand2', command=self.open_custom_pack_window)
+        custom_pack_btn.pack(side='left', padx=(0, 8))
 
-        self.achievements_label = tk.Label(info_row, text="Achievements: None yet", font=('Arial', 10), bg='white', fg='#2C3E50', wraplength=620, justify='left')
-        self.achievements_label.pack(anchor='w', pady=(2, 0))
+        self.guessed_label = tk.Label(left_panel, text="Guessed: -", font=('Comic Sans MS', 10),
+                                      bg='#ECECEC', fg='#4A4A4A', wraplength=560, justify='left')
+        self.guessed_label.pack(anchor='w', pady=(8, 0))
 
-        self.leaderboard_label = tk.Label(info_row, text="Leaderboard: No scores yet", font=('Arial', 10), bg='white', fg='#2C3E50', wraplength=620, justify='left')
-        self.leaderboard_label.pack(anchor='w', pady=(2, 0))
+        self.achievements_label = tk.Label(left_panel, text="", font=('Comic Sans MS', 9), bg='#ECECEC', fg='#5A5A5A')
+        self.achievements_label.pack(anchor='w')
+        self.leaderboard_label = tk.Label(left_panel, text="", font=('Comic Sans MS', 9), bg='#ECECEC', fg='#5A5A5A')
+        self.leaderboard_label.pack(anchor='w')
+        self.history_label = tk.Label(left_panel, text="", font=('Comic Sans MS', 9), bg='#ECECEC', fg='#5A5A5A')
+        self.history_label.pack(anchor='w')
 
-        self.history_label = tk.Label(info_row, text="Recent rounds: None", font=('Arial', 10), bg='white', fg='#2C3E50', wraplength=620, justify='left')
-        self.history_label.pack(anchor='w', pady=(2, 0))
+        right_panel = tk.Frame(main_frame, bg='#ECECEC')
+        right_panel.pack(side='right', fill='both', padx=(0, 6))
+
+        self.canvas = tk.Canvas(right_panel, width=360, height=450, bg='#ECECEC', highlightthickness=0)
+        self.canvas.pack()
+
+        self.name_var = tk.StringVar(value=self.player_name)
+        self.name_entry = tk.Entry(container, textvariable=self.name_var, width=1)
+        self.difficulty_var = tk.StringVar(value=self.state.difficulty.title())
+        self.theme_var = tk.StringVar(value=self.state.theme.title())
+        self.timer_var = tk.BooleanVar(value=bool(self.stats.get('timer_enabled', False)))
 
         self.root.bind('<Key>', self.on_key_press)
 
@@ -464,27 +456,22 @@ class HangmanGame:
     def update_history_display(self):
         rows = self.stats.get('round_history', [])[:5]
         if not rows:
-            self.history_label.config(text="Recent rounds: None")
+            self.history_label.config(text="")
             return
-        parts = []
-        for row in rows:
-            parts.append(
-                f"{row['word']} {row['result']} {row['score']} pts ({row['difficulty'].title()}/{row['theme'].title()})"
-            )
-        self.history_label.config(text="Recent rounds: " + ' | '.join(parts))
+        self.history_label.config(text="")
 
     def update_stats_display(self):
         played = self.stats['games_played']
-        wins = self.stats['wins']
         best = self.stats['best_streak']
-        self.stats_label.config(text=f"Played: {played}  Wins: {wins}  Best Streak: {best}")
+        self.stats_label.config(text=f"Saved: {played}\nBest: {best}")
+        self.category_label.config(text=self.state.theme.title() if self.state.theme != 'all' else 'Everyday Objects')
 
         recent_badges = self.stats['achievements'][-3:]
         if recent_badges:
             badge_text = ', '.join(recent_badges)
-            self.achievements_label.config(text=f"Achievements: {badge_text}")
+            self.achievements_label.config(text=f"Badges: {badge_text}")
         else:
-            self.achievements_label.config(text="Achievements: None yet")
+            self.achievements_label.config(text="")
 
         board = self.stats['leaderboard'][:3]
         if board:
@@ -492,9 +479,9 @@ class HangmanGame:
                 f"{idx + 1}. {entry['name']} {entry['score']} pts ({entry['difficulty'].title()}/{entry['theme'].title()})"
                 for idx, entry in enumerate(board)
             ]
-            self.leaderboard_label.config(text="Leaderboard: " + ' | '.join(rows))
+            self.leaderboard_label.config(text="")
         else:
-            self.leaderboard_label.config(text="Leaderboard: No scores yet")
+            self.leaderboard_label.config(text="")
         self.update_history_display()
 
     def record_game_result(self, won, wrong_guesses):
@@ -557,25 +544,37 @@ class HangmanGame:
             self.guess_letter(letter)
     
     def draw_hangman(self, stage):
-        """Optimized drawing - only update what changed"""
+        """Draw a balloon-rescue scene inspired by the reference style."""
         self.canvas.delete('all')
-        
-        # Draw gallows - static parts
-        self.canvas.create_line(50, 380, 300, 380, width=4, fill='#2C3E50')
-        self.canvas.create_line(100, 380, 100, 80, width=4, fill='#2C3E50')
-        self.canvas.create_line(100, 80, 250, 80, width=4, fill='#2C3E50')
-        self.canvas.create_line(100, 120, 140, 80, width=3, fill='#2C3E50')
-        self.canvas.create_line(250, 80, 250, 120, width=3, fill='#2C3E50')
-        
-        # Draw hangman parts based on stage
-        for i in range(min(stage, len(self.hangman_parts))):
-            part = self.hangman_parts[i]
-            if part[0] == 'oval':
-                self.canvas.create_oval(part[1], part[2], part[3], part[4], 
-                                       width=3, outline='#2C3E50')
-            else:  # line
-                self.canvas.create_line(part[1], part[2], part[3], part[4], 
-                                       width=3, fill='#2C3E50')
+
+        self.canvas.create_polygon(255, 120, 285, 390, 225, 390, fill='#E3E3E3', outline='')
+        self.canvas.create_polygon(318, 138, 348, 390, 288, 390, fill='#E6E6E6', outline='')
+
+        self.canvas.create_oval(210, 360, 340, 440, fill='#121212', outline='#121212')
+        self.canvas.create_oval(242, 385, 263, 401, fill='white', outline='')
+        self.canvas.create_oval(285, 385, 306, 401, fill='white', outline='')
+        self.canvas.create_oval(247, 389, 255, 397, fill='#121212', outline='')
+        self.canvas.create_oval(290, 389, 298, 397, fill='#121212', outline='')
+
+        self.canvas.create_oval(286, 180, 316, 210, fill='#FFFFFF', outline='#111111', width=2)
+        self.canvas.create_line(301, 210, 301, 256, fill='#111111', width=2)
+        self.canvas.create_line(301, 230, 285, 245, fill='#111111', width=2)
+        self.canvas.create_line(301, 230, 317, 245, fill='#111111', width=2)
+        self.canvas.create_line(301, 256, 289, 276, fill='#111111', width=2)
+        self.canvas.create_line(301, 256, 313, 276, fill='#111111', width=2)
+
+        balloon_colors = ['#BF4658', '#729D45', '#4E8AB8', '#C96A44', '#B84E9A', '#5A8C7A']
+        balloons_left = max(self.state.max_wrong - stage, 0)
+        anchor_points = [(270, 148), (292, 136), (318, 142), (338, 156), (282, 168), (322, 170)]
+
+        for idx, (bx, by) in enumerate(anchor_points):
+            if idx < balloons_left:
+                self.canvas.create_line(301, 182, bx, by + 12, fill='#111111', width=1)
+                self.canvas.create_oval(bx - 14, by - 18, bx + 14, by + 14,
+                                        fill=balloon_colors[idx], outline='')
+            else:
+                self.canvas.create_line(bx - 8, by - 8, bx + 8, by + 8, fill='#BDBDBD', width=2)
+                self.canvas.create_line(bx + 8, by - 8, bx - 8, by + 8, fill='#BDBDBD', width=2)
     
     def new_game(self):
         self._cancel_turn_timer()
@@ -591,12 +590,12 @@ class HangmanGame:
         
         # Reset letter buttons efficiently
         for btn in self.letter_buttons.values():
-            btn.config(state='normal', bg='#6B7FCC')
+            btn.config(state='normal', bg='#F6F6F6', fg='#111111', relief='solid', bd=2)
         
         # Update displays
         self.update_word_display()
         self.hint_label.config(text=f"Hint: {self.state.hint}")
-        self.counter_label.config(text=f"Incorrect: {self.state.wrong_guesses}/{self.state.max_wrong}")
+        self.counter_label.config(text=f"Misses: {self.state.wrong_guesses}/{self.state.max_wrong}")
         self.guessed_label.config(text="Guessed: -")
         self.status_label.config(text="Pick a letter to start!")
         self.hint_button.config(text=f"Hint ({self.hints_remaining})", state='normal')
@@ -622,7 +621,7 @@ class HangmanGame:
         self.hint_button.config(text=f"Hint ({self.hints_remaining})")
 
         if letter in self.letter_buttons:
-            self.letter_buttons[letter].config(state='disabled', bg='#95A5D8')
+            self.letter_buttons[letter].config(state='disabled', bg='#ECECEC', fg='#B8B8B8')
 
         penalty_result = self.state.add_wrong_guess()
         self.play_sound_async('correct')
@@ -631,7 +630,7 @@ class HangmanGame:
 
         self.draw_hangman(self.state.wrong_guesses)
         self.update_word_display()
-        self.counter_label.config(text=f"Incorrect: {self.state.wrong_guesses}/{self.state.max_wrong}")
+        self.counter_label.config(text=f"Misses: {self.state.wrong_guesses}/{self.state.max_wrong}")
         guessed_text = ' '.join(sorted(self.state.guessed_letters))
         self.guessed_label.config(text=f"Guessed: {guessed_text}")
 
@@ -660,12 +659,12 @@ class HangmanGame:
         # Play click sound asynchronously
         self.play_sound_async('click')
         
-        self.letter_buttons[letter].config(state='disabled', bg='#95A5D8')
+        self.letter_buttons[letter].config(state='disabled', bg='#ECECEC', fg='#B8B8B8')
 
         if result == 'wrong':
             self.play_sound_async('wrong')
             self.draw_hangman(self.state.wrong_guesses)
-            self.counter_label.config(text=f"Incorrect: {self.state.wrong_guesses}/{self.state.max_wrong}")
+            self.counter_label.config(text=f"Misses: {self.state.wrong_guesses}/{self.state.max_wrong}")
             self.status_label.config(text=f"Nope, '{letter}' is not in the word.")
         elif result == 'correct':
             self.play_sound_async('correct')
